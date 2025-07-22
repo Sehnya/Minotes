@@ -1,0 +1,32 @@
+body {
+    background-image: url('Background-05.jpg');
+    justify-items: center;
+    height:  100vh;
+    align-items: center;
+    width: 100vw;
+    overflow: auto;
+     font-family: "ff-providence-sans-web-pro", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    display: flex;
+    flex-direction: column;
+
+
+}
+
+.card {
+    padding: 3rem;
+    background-image: url('06.png');
+    background-repeat:no-repeat;
+    background-size: contain;
+    height: 500px;
+    filter: drop-shadow(0px 0px 1px rgb(63, 47, 47));
+    justify-self: center;
+    align-self:  center;
+    position: relative;
+    top: 25%;
+}
+
+.card-body {
+    justify-content: space-around;
+}

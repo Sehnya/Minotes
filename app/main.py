@@ -1,7 +1,7 @@
 from typing import Any
 
-from flask import Flask, jsonify, abort, render_template, request
-from app.database import User, Note,db
+from flask import Flask, render_template, request, jsonify, abort
+from database import User, Note, db
 
 # import flask class, instance of class will be the app
 app = Flask(__name__)
@@ -20,6 +20,16 @@ def _db_close(exc):
 #route() decorator tells flask what URL should trigger our func
 def index():
     return render_template("index.html")
+
+@app.route('/signup', methods=['GET','POST'])
+def signup():
+    return render_template("signup.html")
+@app.route('/login', methods=['GET','POST'])
+def login():
+    return render_template("login.html")
+
+
+
 #returns what we want displayed in the browser; content type = HTML
 @app.route('/user/<username>')
 def user(username):

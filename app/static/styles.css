@@ -1,0 +1,102 @@
+body {
+    background-color: #f3e8e1;
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(63, 164, 175, 0.83) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(63, 164, 175, 0.83) 1px, transparent 1px);
+    font-family: "ff-providence-sans-web-pro", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    overflow: auto;
+    Justify-content: center;
+    align-content:  stretch;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding: 0;
+    margin: 0;
+}
+
+
+.header {
+    position: relative;
+    top: 50%;
+    height: 95vh;
+    width: 75%;
+    align-items: center;
+    justify-content: space-between;
+    align-self: center;
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+
+}
+
+.buttons-container {
+    position: absolute;
+    top: 3%;
+    left: 89%;
+}
+
+button {
+    font-family: 'ff-providence-sans-web-pro', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    font-style: normal;
+    background-color: #fdb977;
+    border:  none;
+    border-radius: 5px;
+    padding: 8px;
+    color: #695353;
+    width: 90px
+}
+
+.logo-container {
+   background-image: url('118.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    height: 670px;
+    width: 1555px;
+    position: relative;
+}
+
+h1 {
+    justify-self: center;
+    align-self: center;
+    top: 100px;
+    position: relative;
+    font-size: 205px;
+    color: #695353;
+    left: 250px;
+
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 30px;
+    background-color: #f8ae60;
+}
+
+.body {
+    display: flex;
+    flex-direction: row;
+
+}
+
+.circle-container {
+    position: relative;
+    background-image:url('16.png') ;
+    background-repeat:no-repeat;
+    background-size: contain;
+    width: 200px;
+    height: 200px;
+    text-align: center;
+    left: 100px;
+    top:  90px;
+}
+
+.circle-container p {
+    position: relative;
+    top: 25%;
+    color: #3f2f2f;
+}
