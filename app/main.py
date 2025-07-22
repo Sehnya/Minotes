@@ -1,6 +1,6 @@
 from typing import Any
 
-from flask import Flask, jsonify, abort
+from flask import Flask, jsonify, abort, render_template, request
 from app.database import User, Note,db
 
 # import flask class, instance of class will be the app
@@ -18,8 +18,8 @@ def _db_close(exc):
 
 @app.route('/')
 #route() decorator tells flask what URL should trigger our func
-def hello_world():
-    return "<p>Hello, World!</p>"
+def index():
+    return render_template("index.html")
 #returns what we want displayed in the browser; content type = HTML
 @app.route('/user/<username>')
 def user(username):
@@ -35,36 +35,52 @@ def user(username):
 
 
 #Retrieve all notes for a user
-@app.route('/user/<username>/notes')
-def get_notes(username):
+@app.route('/user/<username>/notes', methods=['POST'])
+def create_note(username):
    user = User.get_or_none(User.username == username)
    if user is None:
        abort(404, description="User not found")
 
-   notes = Note.select().where(Note.user == user)
-   notes_data = [{"id": note.id,"title": note.tite,"content": note.content} for note in notes]
+   data = request.get_json()
+   title = data.get("title")
+   content = data.get("content")
 
-   if not notes_data:
-       abort(404, description="You don't have any notes")
+   if not title or not content:
+     abort(400, description="Title and content required")
 
-   return jsonify(notes_data)
+   note = Note(title=title, content=content)
+   return jsonify({"id": note.id, "message": "Note created"}), 201
 
 
-@app.route('/user/<username>/notes/<int:note_id>')
-def get_note(username,note_id):
+@app.route('/user/<username>/notes/<int:note_id>', methods=['PUT'])
+def update_note(username,note_id):
     user = User.get_or_none(User.username == username)
     if user is None:
         abort(404, description="User not found")
 
-    note = Note.get_or_none(Note.id == note_id) & (Note.user == user)
+    note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
     if note is None:
         abort(404, description="Note not found")
 
-    return jsonify({
-        "id": note.id,
-        "title":note.title,
-        "content":note.content
-    })
+    data = request.get_json()
+    note.title = data.get('title', note.title)
+    note.content = data.get('content', note.content)
+    note.save()
+
+    return jsonify({ "message": "Note updated"}), 200
+
+@app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
+def delete_note(username, note_id):
+    user = User.get_or_none(User.username == username)
+    if user is None:
+        abort(404, description="User not found")
+
+    note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
+    if note is None:
+        abort(404, description="Note not found")
+
+    note.delete_instance()
+    return jsonify({"message": "Note deleted"})
 
 if __name__ == '__main__':
     app.run(debug=True)

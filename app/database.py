@@ -1,5 +1,5 @@
 from peewee import *
-from sqlalchemy.sql.schema import UniqueConstraint
+
 
 db = SqliteDatabase('notes.db')
 
