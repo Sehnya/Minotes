@@ -1,0 +1,19 @@
+#editor-container {
+    height: 85vh;
+    width: 75vw;
+}
+
+body {
+
+    justify-items:  left;
+    top:100px;
+    position: relative;
+    left: 75px;
+}
+
+
+tinymce-editor {
+    font-family: "ff-providence-sans-web-pro", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}

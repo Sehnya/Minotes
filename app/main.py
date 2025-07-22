@@ -92,5 +92,18 @@ def delete_note(username, note_id):
     note.delete_instance()
     return jsonify({"message": "Note deleted"})
 
+@app.route('/save_content', methods=['POST'])
+def save_content():
+    content = request.get_json()
+    # Process and store the content (e.g., in a database)
+    return jsonify({"message": "Content saved successfully"}), 200
+
+# Example endpoint to load content
+@app.route('/load_content', methods=['GET'])
+def load_content():
+    # Retrieve content from your database or storage
+    content = {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hello, Tiptap!"}]}]} # Example content
+    return jsonify(content), 200
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -25,8 +25,37 @@ body {
     align-self:  center;
     position: relative;
     top: 25%;
+    margin: 0;
 }
 
 .card-body {
+    justify-content: space-evenly;
+    display: inline-flex;
+    flex-direction: column;
+    height: 35%;
+    position: relative;
+    width: 100%;
+    font-size: 20px;
+}
+
+.card-header {
+    padding: 0;
+    margin: 0;
+    position: relative;
+    top: -50px;
+    width: 100%;
+    text-align: center;
+    color: #3f2f2f;
+    height: 2%;
+}
+
+.submit-cancel {
+    display: flex;
+    flex-direction: row;
+    padding: 2rem;
+    margin: 0;
     justify-content: space-around;
+    position: relative;
+    justify-items: center;
+
 }
