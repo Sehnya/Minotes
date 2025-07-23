@@ -1,13 +1,11 @@
 # Exported from Render on 2025-07-23T18:40:57Z
 services:
-- type: web
-  name: Minotes
-  runtime: python
-  repo: https://github.com/Sehnya/Minotes
-  plan: starter
-  region: virginia
-  buildCommand: pip install -r requirements.txt && cd frontend && npm install && npm
-    run build
-  startCommand: npm run dev
-  autoDeployTrigger: commit
-version: "1"
+  - type: web
+    name: minotes-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app/main.py"
+    plan: free
+    envVars:
+      - key: FLASK_ENV
+        value: production

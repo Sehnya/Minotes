@@ -3,11 +3,12 @@ from typing import Any
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify
 from database import User, Note, db
 from flask_cors import CORS
+import os
 
 # import flask class, instance of class will be the app
 app = Flask(__name__)
 app.secret_key = "Elija11052017!"
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+CORS(app, supports_credentials=True)
 #instance of class; __name__ helps Flask locate resources like templates and static files.
 @app.before_request
 def _db_connect():
@@ -22,7 +23,7 @@ def _db_close(exc):
 @app.route('/', methods=['GET'])
 #route() decorator tells flask what URL should trigger our func
 def index():
-    return render_template("index.html")
+    return render_template("dashboard.html")
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
@@ -45,7 +46,7 @@ def signup():
             User.create(username=username, email=email, password=password)
             session["user"] = username
             flash('Signup successful')
-            return redirect('http://localhost:5173/")')
+            return redirect("login")
         except Exception as e:
             flash (f"An error occurred: {str(e)}")
             return redirect(url_for('signup'))
@@ -61,7 +62,7 @@ def login():
         
         if user and user.password == password:
             session["user"] = username
-            return redirect("http://localhost:5173/")
+            return redirect("dashboard")
         else:
             flash("Invalid credentials. Please try again.")
             return redirect(url_for('login'))
@@ -139,7 +140,7 @@ def create_note(username):
    if not title or not content:
      abort(400, description="Title and content required")
 
-   note = Note(title=title, content=content)
+   note = Note.create(title=title, content=content, user=user)
    return jsonify({"id": note.id, "message": "Note created"}), 201
 
 
@@ -210,5 +211,5 @@ def api_notes():
 
 if __name__ == '__main__':
     from waitress import serve
-    serve(app, host="0.0.0.0", port=5000)
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    serve(app, host="0.0.0.0", port=port)
