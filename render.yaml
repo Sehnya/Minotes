@@ -10,7 +10,7 @@ services:
         value: production
 
   - type: static
-           - name: notes-frontend
-           - env: static
-           - buildCommand: "cd frontend && npm install --include=dev && npm run build"
-           - staticPublishPath: public
+    name: notes-frontend
+    env: static
+    buildCommand: "cd frontend && npm install --include=dev && npm run build"
+    staticPublishPath: public
