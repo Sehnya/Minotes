@@ -2,7 +2,7 @@ services:
   - type: web
     name: notes-backend
     env: python
-    buildCommand: "pip install -r app/requirements.txt"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "python app/main.py"
     plan: free
     envVars:
@@ -13,4 +13,4 @@ services:
     name: notes-frontend
     env: static
     buildCommand: "cd frontend && npm install && npm run build"
-    staticPublishPath: frontend/dist
+    staticPublishPath: public
