@@ -23,7 +23,7 @@ def _db_close(exc):
 @app.route('/', methods=['GET'])
 #route() decorator tells flask what URL should trigger our func
 def index():
-    return render_template("index")
+    return render_template("index.html")
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
