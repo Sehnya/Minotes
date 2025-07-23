@@ -12,5 +12,5 @@ services:
   - type: static
     name: notes-frontend
     env: static
-    buildCommand: "cd frontend && npm install --include=dev && npm run build"
-    staticPublishPath: public
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: frontend/dist
