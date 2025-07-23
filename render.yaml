@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: notes-backend
+    env: python
+    buildCommand: "pip install -r app/requirements.txt"
+    startCommand: "python app/main.py"
+    plan: free
+    envVars:
+      - key: FLASK_ENV
+        value: production
+
+  - type: static
+    name: notes-frontend
+    env: static
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: frontend/dist
