@@ -2,9 +2,13 @@
   <div class="dashboard">
     <h1>Welcome, {{ user?.username || "..." }}</h1>
 
-    <input v-model="title" placeholder="Note title" class="note-title" />
+    <input
+      v-model="title"
+      placeholder="Note title"
+      class="note-title"
+    />
 
-    <EditorContent :editor="editor" class="editor" />
+    <EditorContent :editor="editor" class="editor"/>
 
     <button @click="saveNote" class="save-button">Save Note</button>
 
@@ -12,7 +16,7 @@
     <ul v-if="notes.length">
       <li v-for="note in notes" :key="note.id">
         <strong>{{ note.title }}</strong>
-        <div v-html="note.content"></div>
+        <div v-html="note.content" />
       </li>
     </ul>
     <p v-else>No notes yet.</p>
@@ -20,56 +24,75 @@
 </template>
 
 <script setup>
-import {onBeforeUnmount, onMounted, ref} from 'vue'
-import {Editor, EditorContent} from '@tiptap/vue-3'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 
 const user = ref(null)
 const notes = ref([])
 const title = ref('')
+
+// Initialize TipTap editor
 const editor = new Editor({
   content: '<p>Start typing...</p>',
   extensions: [StarterKit],
 })
 
+// Fetch logged-in user
 const fetchUser = async () => {
-  const res = await fetch('http://localhost:5000/api/session', {
-    credentials: 'include',
-  })
+  try {
+    const res = await fetch('http://localhost:5000/api/session', {
+      credentials: 'include',
+    })
 
-  if (!res.ok) {
-    window.location.href = 'http://localhost:5000/login'
-    return
+    if (!res.ok) {
+      window.location.href = 'http://localhost:5000/login'
+      return
+    }
+
+    user.value = await res.json()
+    await fetchNotes()
+  } catch (error) {
+    console.error("Error fetching session:", error)
   }
-
-  user.value = await res.json()
-  await fetchNotes()
 }
 
+// Fetch notes for logged-in user
 const fetchNotes = async () => {
-  const res = await fetch(`http://localhost:5000/api/notes`, {
-    credentials: 'include',
-  })
-  const data = await res.json()
-  notes.value = data.notes || []
+  try {
+    const res = await fetch('http://localhost:5000/api/notes', {
+      credentials: 'include',
+    })
+    const data = await res.json()
+    notes.value = data.notes || []
+  } catch (err) {
+    console.error("Error fetching notes:", err)
+  }
 }
 
+// Save new note to backend
 const saveNote = async () => {
-  const res = await fetch('http://localhost:5000/save_note', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      title: title.value,
-      content: editor.getHTML(),
-    }),
-  })
+  try {
+    const response = await fetch('http://localhost:5000/save_note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        title: title.value,
+        content: editor.getHTML(),
+      }),
+    })
 
-  const result = await res.json()
-  alert(result.message || 'Note saved.')
-  title.value = ''
-  editor.commands.setContent('')
-  await fetchNotes()
+    const result = await response.json()
+    alert(result.message || 'Note saved.')
+
+    // Reset form
+    title.value = ''
+    editor.commands.setContent('')
+    await fetchNotes()
+  } catch (error) {
+    console.error("Error saving note:", error)
+  }
 }
 
 onMounted(fetchUser)
@@ -82,13 +105,15 @@ onBeforeUnmount(() => {
 .dashboard {
   max-width: 700px;
   margin: auto;
-  padding: 2rem;
+
 }
 .note-title {
   width: 100%;
   padding: 0.75rem;
-  margin-bottom: 1rem;
   font-size: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 .editor {
   border: 1px solid #ccc;
@@ -99,7 +124,7 @@ onBeforeUnmount(() => {
 }
 .save-button {
   padding: 0.75rem 1.5rem;
-  background: #007bff;
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 6px;
