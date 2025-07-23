@@ -1,0 +1,4 @@
+flask
+flask-cors
+peewee
+waitress
