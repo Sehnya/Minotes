@@ -59,3 +59,13 @@ body {
     justify-items: center;
 
 }
+
+button {
+    border: none;
+ background-color: chocolate;
+    color: #3f2f2f;
+    padding: 1rem;
+    cursor: pointer;
+ border-radius: 8px;
+    filter: drop-shadow(0px 0px 1px rgb(63, 47, 47));
+}

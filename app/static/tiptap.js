@@ -1,26 +1,26 @@
-import { Editor } from "@tiptap/core";
-import { StarterKit } from "@tiptap/starter-kit";
+import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
+import { Editor, EditorContent } from 'https://esm.sh/@tiptap/vue-3@2'
+import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2'
 
-const editor = new Editor({
-  element: document.querySelector("#editor-container"),
-  extensions: [
-    StarterKit,
-    // Add other Tiptap extensions as needed
-  ],
-  content: "", // Initial content (you'll load it from Flask)
-  onUpdate({ editor }) {
-    // Save content to Flask whenever the editor changes
-    fetch("/save_content", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editor.getJSON()),
-    });
+createApp({
+  components: { EditorContent },
+  data() {
+    return {
+      editor: null,
+    }
   },
-});
-
-// Load initial content from Flask
-fetch("/load_content")
-  .then((response) => response.json())
-  .then((data) => {
-    editor.commands.setContent(data);
-  });
+  mounted() {
+    this.editor = new Editor({
+      content: '<p>Start typing your note...</p>',
+      extensions: [StarterKit],
+      onUpdate: ({ editor }) => {
+        const html = editor.getHTML()
+        document.getElementById('editor-content').value = html
+      },
+    })
+  },
+  beforeUnmount() {
+    this.editor?.destroy()
+  },
+  template: `<EditorContent :editor="editor" />`
+}).mount('#editor')

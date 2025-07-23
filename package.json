@@ -1,0 +1,31 @@
+{
+  "name": "minotes",
+  "version": "1.0.0",
+  "description": "To install dependencies:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sehnya/Minotes.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Sehnya/Minotes/issues"
+  },
+  "homepage": "https://github.com/Sehnya/Minotes#readme",
+  "dependencies": {
+    "@tiptap/core": "^3.0.7",
+    "@tiptap/extension-collaboration": "^3.0.7",
+    "@tiptap/extension-collaboration-caret": "^3.0.7",
+    "@tiptap/pm": "^3.0.7",
+    "@tiptap/starter-kit": "^3.0.7",
+    "@tiptap/vue-3": "^3.0.7",
+    "y-prosemirror": "^1.3.7",
+    "yjs": "^13.6.27"
+  }
+}

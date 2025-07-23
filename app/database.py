@@ -8,6 +8,7 @@ class BaseModel(Model):
         database = db
 
 class User(BaseModel):
+
     query = None
     username = CharField(unique=True)
     password = CharField()
@@ -22,6 +23,7 @@ class Note(BaseModel):
     id = PrimaryKeyField()
     title = CharField()
     content = TextField()
+    user = ForeignKeyField(User, backref="notes")
 
     class Meta:
         table_name = 'notes'

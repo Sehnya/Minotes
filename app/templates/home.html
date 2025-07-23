@@ -1,35 +1,44 @@
-<!doctype html>
+<!-- templates/home.html -->
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- <script src="https://cdn.jsdelivr.net/npm/@tinymce/tinymce-webcomponent/dist/tinymce-webcomponent.min.js"></script>
-<link rel="stylesheet" href="https://use.typekit.net/tmb0jpk.css">
-      <link rel="stylesheet" href="../static/home.css"
-    <title>Flask Tiptap Editor</title>
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <script type="module" src="{{ url_for('static', filename='tiptap.js') }}"></script>
+  <link rel="stylesheet" href="https://use.typekit.net/tmb0jpk.css">
+  <style>
+    .editor-content {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      border-radius: 8px;
+      min-height: 200px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome, {{ user.username }}!</h1>
 
-  </head>
-  <body>
-<div id="editor-container">
-    <tinymce-editor
-  api-key="ponjo238k6p6lbglhzgy1parg3j4ttm9m6bxb1x8ibaj9qnc"
-
-
-      menubar="true"
-      plugins="advlist autolink lists link image charmap preview anchor
-        searchreplace visualblocks code fullscreen
-        insertdatetime media table code help wordcount"
-      toolbar="undo redo | blocks | bold italic backcolor |
-        alignleft aligncenter alignright alignjustify |
-        bullist numlist outdent indent | removeformat | help"
-      content_style="body
-      {
-        font-family: 'ff-providence-sans-web-pro', sans-serif;
-    font-weight: 200;
-    font-style: normal;
-      }"
-    > &lt;p&gt;Welcome to the TinyMCE Web Component example!&lt;/p&gt;</tinymce-editor>
+  <form id="note-form" method="POST" action="{{ url_for('save_note') }}">
+    <input type="text" name="title" placeholder="Note title" required /><br><br>
+    <!-- This is where TipTap will render -->
+    <div id="editor-app">
+  <editor-content :editor="editor" class="editor-content"></editor-content>
 </div>
+    <input type="hidden" name="content" id="editor-content" />
+    <button type="submit">Save Note</button>
+  </form>
 
-  </body>
+  <h2>Your Notes</h2>
+  {% if notes %}
+    <ul>
+      {% for note in notes %}
+        <li><strong>{{ note.title }}</strong><br>{{ note.content|safe }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No notes yet.</p>
+  {% endif %}
+</body>
 </html>
+
