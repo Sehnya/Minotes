@@ -23,7 +23,7 @@ def _db_close(exc):
 @app.route('/', methods=['GET'])
 #route() decorator tells flask what URL should trigger our func
 def index():
-    return render_template("dashboard.html")
+    return render_template("index")
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
@@ -110,7 +110,7 @@ def home():
         return redirect(url_for("home"))
 
     notes = Note.select().where(Note.user == user)
-    return render_template("home.html", user=user, notes=notes)
+    return render_template("dashboard.html", user=user, notes=notes)
 
 #returns what we want displayed in the browser; content type = HTML
 @app.route('/user/<username>')
