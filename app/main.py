@@ -7,7 +7,8 @@ import os
 
 # import flask class, instance of class will be the app
 app = Flask(__name__)
-app.secret_key = "Elija11052017!"
+app.secret_key = os.urandom.get("SECRET_KEY", "NewSession101!")
+
 CORS(app, supports_credentials=True)
 #instance of class; __name__ helps Flask locate resources like templates and static files.
 @app.before_request

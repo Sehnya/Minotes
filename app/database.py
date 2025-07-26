@@ -36,9 +36,16 @@ class Note(BaseModel):
     class Meta:
         table_name = 'notes'
 
+class UserSession(BaseModel):
+    user = ForeignKeyField(User, backref="sessions")
+    session_id = CharField(unique=True)
+    data = TextField(null=True)  # You can store JSON string or plain text
+
+    class Meta:
+        table_name = 'user_sessions'
 
 
 db.connect()
-db.create_tables([User, Note])
+db.create_tables([User, Note, UserSession], safe=True)
 
 print("Database connected and tables created")
