@@ -75,6 +75,10 @@ def logout():
     flash("You have been logged out.")
     return redirect(url_for("login"))
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
 
 @app.route("/api/session")
 def api_session():

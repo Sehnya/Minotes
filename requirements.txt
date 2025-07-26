@@ -1,5 +1,6 @@
-flask
-flask-cors
-peewee
-waitress
+flask~=3.1.1
+flask-cors~=6.0.1
+peewee~=3.18.2
+waitress~=3.0.2
 psycopg2-binary
+WTForms~=3.2.1
