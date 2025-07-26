@@ -1,6 +1,6 @@
 from typing import Any
 
-from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify, logging
 from database import User, Note, db
 from flask_cors import CORS
 import os
@@ -213,6 +213,11 @@ def api_notes():
         ]
     })
 
+logging.basicConfig(
+    level=logging.DEBUG,
+format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     from waitress import serve
