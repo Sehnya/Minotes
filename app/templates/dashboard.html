@@ -9,24 +9,31 @@
     <script type="module" crossorigin src="../../public/assets/index-DY4w_dJs.js"></script>
     <link rel="stylesheet" crossorigin href="../../public/assets/index-BZLG_cmp.css">
   </head>
-  <body>
-  <div id="header">
-    <h1>Dashboard</h1>
+  <body style="max-width: 100vw; margin: 0 auto; padding: 0;">
+  <div id="header" style=" display: flex;'flex-wrap'; justify-content: space-between; align-items: center; padding: 20px;">
+    <h1 style="position: relative; left: 50%">Dashboard</h1>
+      <button>Log Out</button>
   </div>
-  <div id="main">
+  <div id="main" style="grid-area: main; column-count:  2; column-gap: 1px; column-width: 500px; row-gap: 1px; display: flex; text-align: center; margin:0; padding: 0;">
 
-      <div id="main-content">
+      <div id="main-content" style="justify-content: space-evenly; max-width: 100vw; overflow: auto; position: relative; margin: 0 auto; width: 100%;" >
           <h1 >Create Note</h1>
         <div id="editor-container" >
         <div id="editor-header"></div>
          <div id="input-field">
-             <textarea id="content" name="note" rows="30" style="max-width: 1052px; max-height: 720px; min-height: 720px; min-width: 1052px"></textarea>
+             <textarea id="content" name="note" rows="30" cols="50" style="min-height: 75vh; max-height:75vh;max-width: 65vw; min-width: 65vw">
+
+             </textarea>
          </div>
              <button id="save-btn">Save Note</button>
         </div>
       </div>
-    <div id="right-sb">
-    <h1>Notes</h1>
+    <div id="right-sb" style="width:50%; display: inline-block; position: relative; text-align: center; flex-direction: column; min-width: 350px ">
+    <h1 style="position: relative;">Notes</h1>
+        <div id="notes-list-container" style="display: flex; flex-direction: column; justify-content: space-around; ">
+
+
+        </div>
     </div>
 </div>
   </body>

@@ -26,7 +26,9 @@ def _db_close(exc):
 @app.route('/', methods=['GET'])
 #route() decorator tells flask what URL should trigger our func
 def index():
-    return render_template("index.html")
+    if "user" in session:
+        redirect(url_for("dashboard")) #Already logged in --> go to dash
+    return render_template("index.html") # Not logged in --> landing page
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
@@ -80,7 +82,11 @@ def logout():
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    if "user" not in session:
+        return redirect(url_for("login"))
+    user = User.get_or_none(User.username == session["user"])
+    notes = Note.select().where(Note.user == user)
+    return render_template('dashboard.html', user=user, notes=notes)
 
 
 @app.route("/api/session")
