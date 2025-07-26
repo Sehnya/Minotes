@@ -38,3 +38,66 @@
 </div>
   </body>
 </html>
+<script>
+
+let timeoutId;
+const textarea = document.getElementById('content');
+const saveBtn = document.getElementById('save-btn');
+const notesList = document.getElementById('notes-list-container');
+
+function showAlert(message) {
+  const alertBox = document.createElement('div');
+  alertBox.textContent = message;
+  alertBox.style.cssText = "background:#cce5ff;padding:10px;margin:10px 0;border-radius:5px;";
+  document.body.prepend(alertBox);
+  setTimeout(() => alertBox.remove(), 3000);
+}
+
+function saveNote() {
+  const content = textarea.value.trim();
+  if (!content) return;
+
+  fetch("/save_note", {
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    credentials: "include",
+    body: JSON.stringify({ title: "Untitled Note", content })
+  })
+    .then(res => res.json())
+    .then(data => {
+      showAlert(data.message || "Note saved.");
+      fetchNotes();
+    });
+}
+
+textarea.addEventListener("input", () => {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(saveNote, 5000);
+});
+
+saveBtn.addEventListener("click", saveNote);
+
+function fetchNotes() {
+  fetch("/api/notes", { credentials: "include" })
+    .then(res => res.json())
+    .then(data => {
+      notesList.innerHTML = "";
+      data.notes
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+        .forEach(note => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <h3>${note.title}</h3>
+            <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
+            <p>${note.content}</p>
+            <hr>
+          `;
+          notesList.appendChild(div);
+        });
+    });
+}
+
+fetchNotes();
+</script>
+
+

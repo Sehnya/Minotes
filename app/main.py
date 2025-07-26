@@ -6,10 +6,12 @@ import logging
 from database import User, Note, db
 from flask_cors import CORS
 import os
+from datetime import timedelta
 
 # import flask class, instance of class will be the app
 app = Flask(__name__)
 app.secret_key = "Elija11052017!"
+app.permanent_session_lifetime = timedelta(days=7)
 
 CORS(app, supports_credentials=True)
 #instance of class; __name__ helps Flask locate resources like templates and static files.
@@ -67,6 +69,7 @@ def login():
         
         if user and user.password == password:
             session["user"] = username
+            session.permanent = True
             return redirect("dashboard")
         else:
             flash("Invalid credentials. Please try again.")
