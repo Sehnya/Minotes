@@ -12,7 +12,7 @@
   <body style="max-width: 100vw; margin: 0 auto; padding: 0;">
   <div id="header" style=" display: flex;'flex-wrap'; justify-content: space-between; align-items: center; padding: 20px;">
     <h1 style="position: relative; left: 50%">Dashboard</h1>
-      <button>Log Out</button>
+      <button id="logout-btn">Log Out</button>
   </div>
   <div id="main" style="grid-area: main; column-count:  2; column-gap: 1px; column-width: 500px; row-gap: 1px; display: flex; text-align: center; margin:0; padding: 0;">
 
@@ -39,8 +39,9 @@
   </body>
 </html>
 <script>
-
 let timeoutId;
+let currentNoteId = null;
+
 const textarea = document.getElementById('content');
 const saveBtn = document.getElementById('save-btn');
 const notesList = document.getElementById('notes-list-container');
@@ -55,18 +56,24 @@ function showAlert(message) {
 
 function saveNote() {
   const content = textarea.value.trim();
+  const title = "Untitled Note";
+
   if (!content) return;
+
+  const payload = { title, content };
+  if (currentNoteId) payload.note_id = currentNoteId;
 
   fetch("/save_note", {
     method: "POST",
     headers: { 'Content-Type': 'application/json' },
     credentials: "include",
-    body: JSON.stringify({ title: "Untitled Note", content })
+    body: JSON.stringify(payload)
   })
     .then(res => res.json())
     .then(data => {
       showAlert(data.message || "Note saved.");
-      fetchNotes();
+      currentNoteId = data.note_id;  // <-- Update current note ID
+      fetchNotes();  // Re-render notes list
     });
 }
 
@@ -99,5 +106,3 @@ function fetchNotes() {
 
 fetchNotes();
 </script>
-
-
