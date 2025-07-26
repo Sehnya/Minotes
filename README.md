@@ -1,15 +1,3 @@
 # minotes
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.18. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+This web app is designed as a personal note taking app. Please see the requirements.txt to see required imports for this app to run. 
