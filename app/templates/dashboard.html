@@ -45,6 +45,7 @@ let currentNoteId = null;
 const textarea = document.getElementById('content');
 const saveBtn = document.getElementById('save-btn');
 const notesList = document.getElementById('notes-list-container');
+const logoutBtn = document.getElementById('logout-btn');
 
 function showAlert(message) {
   const alertBox = document.createElement('div');
@@ -53,6 +54,12 @@ function showAlert(message) {
   document.body.prepend(alertBox);
   setTimeout(() => alertBox.remove(), 3000);
 }
+logoutBtn.addEventListener('click', () => {
+  sessionStorage.clear();     // Clears all sessionStorage keys
+  localStorage.clear();       // Optional: clear localStorage too
+  window.location.href = "/logout";  // Let Flask clear the server-side session
+});
+
 
 function saveNote() {
   const content = textarea.value.trim();
