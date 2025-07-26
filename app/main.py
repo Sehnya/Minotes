@@ -1,6 +1,8 @@
+from fileinput import filename
 from typing import Any
 
-from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify, logging
+from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify
+import logging
 from database import User, Note, db
 from flask_cors import CORS
 import os
