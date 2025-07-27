@@ -49,11 +49,7 @@ const textarea = document.getElementById('content');
 const saveBtn = document.getElementById('save-btn');
 const notesList = document.getElementById('notes-list-container');
 const logoutBtn = document.getElementById('logout-btn');
-const deleteBtn = document.getElementById('delete-btn');
-const input = document.getElementsByTagName('input')[0];
-
-
-
+const input = document.getElementById('title');
 
 function showAlert(message) {
   const alertBox = document.createElement('div');
@@ -62,29 +58,20 @@ function showAlert(message) {
   document.body.prepend(alertBox);
   setTimeout(() => alertBox.remove(), 3000);
 }
+
 logoutBtn.addEventListener('click', () => {
-  sessionStorage.clear();     // Clears all sessionStorage keys
-  localStorage.clear();       // Optional: clear localStorage too
-  window.location.href = "/logout";  // Let Flask clear the server-side session
+  sessionStorage.clear();
+  localStorage.clear();
+  window.location.href = "/logout";
 });
 
-
 function saveNote() {
-  const content = textarea.value.trim();
-
-  if (!content) return;
-
-
-  function saveNote() {
-  const content = textarea.value.trim();
   const title = input.value.trim();
+  const content = textarea.value.trim();
 
-  if (!content || !title) return;
+  if (!title || !content) return;
 
-  const payload = {
-    title,
-    content
-  };
+  const payload = { title, content };
 
   fetch("/save_note", {
     method: "POST",
@@ -116,30 +103,33 @@ function fetchNotes() {
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
         .forEach(note => {
           const div = document.createElement("div");
-
           div.innerHTML = `
             <h3>${note.title}</h3>
-            <h3></h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
             <p>${note.content}</p>
             <button class="delete-btn" data-id="${note.id}">Delete Note</button>
-
             <hr>
           `;
           notesList.appendChild(div);
         });
+
+      // Attach delete listeners AFTER rendering
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const noteId = btn.getAttribute("data-id");
+          deleteNote(noteId);
+        });
+      });
     });
 }
-
-fetchNotes();
 
 async function deleteNote(noteId) {
   const res = await fetch(`/delete_note/${noteId}`, {
     method: 'DELETE',
     credentials: 'include'
   });
-  const data = await res.json();
 
+  const data = await res.json();
   if (res.ok) {
     showAlert(data.message);
     fetchNotes();
@@ -148,7 +138,5 @@ async function deleteNote(noteId) {
   }
 }
 
-deleteBtn.addEventListener('click', deleteNote);
-data.notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-
+fetchNotes();
 </script>
