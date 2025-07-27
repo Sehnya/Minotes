@@ -1,8 +1,10 @@
 
 
 import os
+from _pydatetime import timezone
 
 from peewee import *
+from peewee import utcnow
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(
@@ -35,8 +37,12 @@ class Note(BaseModel):
     title = CharField()
     content = TextField()
     user = ForeignKeyField(User, backref="notes")
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField(default=datetime.now)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+    def save(self, *args, **kwargs):
+        self.updated_at = datetime.now(timezone.utc)
+        return super().save(*args, **kwargs)
 
     class Meta:
         table_name = 'notes'
