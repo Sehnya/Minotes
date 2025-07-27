@@ -2,9 +2,10 @@
 
 import os
 from datetime import datetime, timezone
-
+from time import tzname
 from peewee import *
-
+from sqlalchemy import DateTime
+from sqlalchemy.sql.functions import func
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(
@@ -37,8 +38,9 @@ class Note(BaseModel):
     title = CharField()
     content = TextField()
     user = ForeignKeyField(User, backref="notes")
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField()
+
     is_active = BooleanField(default=True)  # Only the current version is active
     parent = ForeignKeyField('self', null=True, backref='versions')  # Reference to previous version
     version = IntegerField(default=1)
