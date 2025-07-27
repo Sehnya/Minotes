@@ -43,8 +43,13 @@
   </body>
 </html>
 <script type="module">
-  import { Editor } from 'https://esm.sh/@tiptap/core'
+ // Correct imports for vanilla JS
+import { Editor } from 'https://esm.sh/@tiptap/core'
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
+import { Underline } from 'https://esm.sh/@tiptap/extension-underline'
+import { ListItem } from 'https://esm.sh/@tiptap/extension-list-item'
+import { BulletList } from 'https://esm.sh/@tiptap/extension-bullet-list'
+import { OrderedList } from 'https://esm.sh/@tiptap/extension-ordered-list'
 
 let timeoutId;
 let currentNoteId = null;
@@ -57,7 +62,7 @@ const saveBtn = document.getElementById('save-btn');
 const newNoteBtn = document.getElementById('new-note-btn');
 const notesList = document.getElementById('notes-list-container');
 const logoutBtn = document.getElementById('logout-btn');
-const loginBtn = document.getElementById('login-btn'); // Add login button reference
+const loginBtn = document.getElementById('login-btn');
 
 // UI Components
 const UIComponents = {
@@ -108,6 +113,7 @@ const UIComponents = {
       button.type = 'button';
       button.innerHTML = btn.icon;
       button.title = btn.title;
+      button.dataset.command = btn.command;
       button.style.cssText = `
         padding: 6px 8px;
         border: 1px solid transparent;
@@ -122,11 +128,14 @@ const UIComponents = {
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        color: #333;
       `;
 
       button.addEventListener('mouseenter', () => {
-        button.style.background = '#e9ecef';
-        button.style.borderColor = '#dee2e6';
+        if (!button.classList.contains('active')) {
+          button.style.background = '#e9ecef';
+          button.style.borderColor = '#dee2e6';
+        }
       });
 
       button.addEventListener('mouseleave', () => {
@@ -183,12 +192,14 @@ const UIComponents = {
       btn.classList.remove('active');
       btn.style.background = 'transparent';
       btn.style.borderColor = 'transparent';
+      btn.style.color = '#333';
     });
 
     // Update active states based on current selection
     const activeStates = {
       bold: editor.isActive('bold'),
       italic: editor.isActive('italic'),
+      underline: editor.isActive('underline'),
       strike: editor.isActive('strike'),
       heading1: editor.isActive('heading', { level: 1 }),
       heading2: editor.isActive('heading', { level: 2 }),
@@ -198,10 +209,8 @@ const UIComponents = {
       codeBlock: editor.isActive('codeBlock')
     };
 
-    buttons.forEach((btn, index) => {
-      const commands = ['bold', 'italic', 'underline', 'strike', null, 'heading1', 'heading2', 'paragraph', null, 'bulletList', 'orderedList', null, 'blockquote', 'codeBlock'];
-      const command = commands[index];
-
+    buttons.forEach(btn => {
+      const command = btn.dataset.command;
       if (command && activeStates[command]) {
         btn.classList.add('active');
         btn.style.background = '#007bff';
@@ -397,14 +406,17 @@ function showAlert(message, type = 'info') {
   `;
 
   // Add slide-in animation
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(style);
+  if (!document.getElementById('alert-styles')) {
+    const style = document.createElement('style');
+    style.id = 'alert-styles';
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   document.body.appendChild(alertBox);
   setTimeout(() => alertBox.remove(), 4000);
@@ -498,14 +510,17 @@ function showLoading(show = true) {
     `;
 
     // Add spinner animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
+    if (!document.getElementById('spinner-styles')) {
+      const style = document.createElement('style');
+      style.id = 'spinner-styles';
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
 
     document.body.appendChild(loadingEl);
   } else if (!show && loadingEl) {
@@ -526,57 +541,22 @@ window.addEventListener('offline', () => {
   updateAutoSaveStatus('Offline');
 });
 
-// Fixed logout button
-logoutBtn?.addEventListener('click', () => {
-  UIComponents.createModal(
-    'Confirm Logout',
-    'Are you sure you want to logout? Any unsaved changes will be lost.',
-    [
-      {
-        text: 'Cancel',
-        handler: () => {}
-      },
-      {
-        text: 'Logout',
-        primary: true,
-        handler: () => {
-          sessionStorage.clear();
-          localStorage.clear();
-          showLoading(true);
-
-          // Make logout request to server
-          fetch('/logout', {
-            method: 'POST',
-            credentials: 'include'
-          })
-          .then(() => {
-            window.location.href = "/login";
-          })
-          .catch(() => {
-            // Even if logout fails, redirect to login
-            window.location.href = "/login";
-          });
-        }
-      }
-    ]
-  );
-});
-
-// Fixed login button (if it exists)
-loginBtn?.addEventListener('click', () => {
-  window.location.href = "/login";
-});
-
 // Initialize Simple Editor with toolbar
 function initializeSimpleEditor() {
   const editorContainer = document.querySelector('#editor');
-  if (!editorContainer) return;
+  if (!editorContainer) {
+    console.error('Editor container not found! Make sure you have <div id="editor"></div> in your HTML');
+    return;
+  }
+
+  // Clear any existing content
+  editorContainer.innerHTML = '';
 
   // Create toolbar
   const toolbar = UIComponents.createSimpleToolbar();
   editorContainer.parentNode.insertBefore(toolbar, editorContainer);
 
-  // Style the editor
+  // Style the editor container
   editorContainer.style.cssText = `
     border: 1px solid #e1e5e9;
     border-top: none;
@@ -587,13 +567,34 @@ function initializeSimpleEditor() {
     font-size: 14px;
     line-height: 1.5;
     outline: none;
+    background: white;
   `;
 
-  // Initialize TipTap editor
+  // Initialize TipTap editor with correct syntax
   editor = new Editor({
     element: editorContainer,
-    extensions: [StarterKit],
-    content: '',
+    extensions: [
+      StarterKit,
+      Underline,
+      ListItem,
+      BulletList.configure({
+        HTMLAttributes: {
+          class: 'bullet-list',
+        },
+      }),
+      OrderedList.configure({
+        HTMLAttributes: {
+          class: 'ordered-list',
+        },
+      }),
+    ],
+    content: '<p>Start writing your note...</p>',
+    editorProps: {
+      attributes: {
+        class: 'tiptap-editor',
+        spellcheck: 'true',
+      },
+    },
     onUpdate: ({ editor }) => {
       clearTimeout(timeoutId);
       updateAutoSaveStatus('Typing...');
@@ -615,16 +616,82 @@ function initializeSimpleEditor() {
     },
     onSelectionUpdate: () => {
       UIComponents.updateToolbarState();
+    },
+    onCreate: ({ editor }) => {
+      console.log('Editor created successfully');
+      UIComponents.updateToolbarState();
+    },
+    onDestroy: () => {
+      console.log('Editor destroyed');
     }
   });
+
+  // Add some basic CSS for the editor content
+  if (!document.getElementById('editor-styles')) {
+    const editorStyles = document.createElement('style');
+    editorStyles.id = 'editor-styles';
+    editorStyles.textContent = `
+      .tiptap-editor {
+        outline: none;
+      }
+      .tiptap-editor h1 {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin: 0.5em 0;
+      }
+      .tiptap-editor h2 {
+        font-size: 1.3em;
+        font-weight: bold;
+        margin: 0.5em 0;
+      }
+      .tiptap-editor p {
+        margin: 0.5em 0;
+      }
+      .tiptap-editor ul, .tiptap-editor ol {
+        padding-left: 1.5em;
+        margin: 0.5em 0;
+      }
+      .tiptap-editor blockquote {
+        border-left: 3px solid #ccc;
+        padding-left: 1em;
+        margin: 0.5em 0;
+        font-style: italic;
+      }
+      .tiptap-editor pre {
+        background: #f5f5f5;
+        padding: 1em;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+      .tiptap-editor code {
+        background: #f5f5f5;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-family: monospace;
+      }
+      .tiptap-editor strong {
+        font-weight: bold;
+      }
+      .tiptap-editor em {
+        font-style: italic;
+      }
+      .tiptap-editor u {
+        text-decoration: underline;
+      }
+      .tiptap-editor s {
+        text-decoration: line-through;
+      }
+    `;
+    document.head.appendChild(editorStyles);
+  }
 }
 
-// Enhanced save function
+// Enhanced save function with better error handling
 function saveNote() {
   const title = titleInput.value.trim();
-  const content = editor.getHTML().trim();
+  const content = editor ? editor.getHTML().trim() : '';
 
-  if (!title && !content) {
+  if (!title && (!content || content === '<p></p>' || content === '<p>Start writing your note...</p>')) {
     updateAutoSaveStatus('Error');
     return;
   }
@@ -636,9 +703,9 @@ function saveNote() {
     return;
   }
 
-  if (!content || content === '<p></p>') {
+  if (!content || content === '<p></p>' || content === '<p>Start writing your note...</p>') {
     showAlert("Please add some content to your note.", 'warning');
-    editor.commands.focus();
+    if (editor) editor.commands.focus();
     updateAutoSaveStatus('Error');
     return;
   }
@@ -724,7 +791,9 @@ function deleteNote(noteId) {
 
               if (currentNoteId === noteId) {
                 titleInput.value = "";
-                editor.commands.clearContent();
+                if (editor) {
+                  editor.commands.clearContent();
+                }
                 currentNoteId = null;
                 showAlert("Ready to write a new note.", 'info');
               }
@@ -829,7 +898,7 @@ function fetchNotes() {
             if (e.target.classList.contains("delete-btn")) return;
 
             const hasUnsavedChanges = titleInput.value.trim() !== '' ||
-                                    (editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>');
+                                    (editor && editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>');
 
             if (hasUnsavedChanges && currentNoteId !== note.id) {
               UIComponents.createModal(
@@ -855,7 +924,7 @@ function fetchNotes() {
             loadNote(note);
           });
 
-          const deleteBtn = div.querySelector(".delete-btn");
+                    const deleteBtn = div.querySelector(".delete-btn");
           deleteBtn.addEventListener("mouseenter", () => {
             deleteBtn.style.background = "#dc3545";
             deleteBtn.style.color = "white";
@@ -885,20 +954,22 @@ function fetchNotes() {
 function loadNote(note) {
   currentNoteId = note.id;
   titleInput.value = note.title;
-  editor.commands.setContent(note.content);
+  if (editor) {
+    editor.commands.setContent(note.content);
+  }
   showAlert(`Opened: ${note.title}`, 'info');
 }
 
 // Manual Save with UI feedback
-saveBtn.addEventListener("click", () => {
+saveBtn?.addEventListener("click", () => {
   updateAutoSaveStatus('Saving...');
   saveNote();
 });
 
 // Enhanced New Note with UI modal
-newNoteBtn.addEventListener("click", () => {
+newNoteBtn?.addEventListener("click", () => {
   const hasUnsavedChanges = titleInput.value.trim() !== '' ||
-                          (editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>');
+                          (editor && editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>');
 
   if (hasUnsavedChanges) {
     UIComponents.createModal(
@@ -914,7 +985,9 @@ newNoteBtn.addEventListener("click", () => {
           primary: true,
           handler: () => {
             titleInput.value = "";
-            editor.commands.clearContent();
+            if (editor) {
+              editor.commands.setContent('<p>Start writing your note...</p>');
+            }
             currentNoteId = null;
             titleInput.focus();
             showAlert("Ready to write a new note.", 'info');
@@ -926,10 +999,201 @@ newNoteBtn.addEventListener("click", () => {
   }
 
   titleInput.value = "";
-  editor.commands.clearContent();
+  if (editor) {
+    editor.commands.setContent('<p>Start writing your note...</p>');
+  }
   currentNoteId = null;
   titleInput.focus();
   showAlert("Ready to write a new note.", 'info');
 });
+
+// Fixed logout button
+logoutBtn?.addEventListener('click', () => {
+  UIComponents.createModal(
+    'Confirm Logout',
+    'Are you sure you want to logout? Any unsaved changes will be lost.',
+    [
+      {
+        text: 'Cancel',
+        handler: () => {}
+      },
+      {
+        text: 'Logout',
+        primary: true,
+        handler: () => {
+          sessionStorage.clear();
+          localStorage.clear();
+          showLoading(true);
+
+          // Make logout request to server
+          fetch('/logout', {
+            method: 'POST',
+            credentials: 'include'
+          })
+          .then(() => {
+            window.location.href = "/login";
+          })
+          .catch(() => {
+            // Even if logout fails, redirect to login
+            window.location.href = "/login";
+          });
+        }
+      }
+    ]
+  );
+});
+
+// Fixed login button (if it exists)
+loginBtn?.addEventListener('click', () => {
+  window.location.href = "/login";
+});
+
+// Auto-save on title change
+titleInput?.addEventListener('input', () => {
+  clearTimeout(timeoutId);
+  updateAutoSaveStatus('Typing...');
+
+  timeoutId = setTimeout(() => {
+    if (isOnline && (titleInput.value.trim() || (editor && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>'))) {
+      updateAutoSaveStatus('Saving...');
+      saveNote();
+    } else if (!isOnline) {
+      updateAutoSaveStatus('Offline');
+      localStorage.setItem('unsaved_content', JSON.stringify({
+        title: titleInput.value.trim(),
+        content: editor ? editor.getHTML().trim() : '',
+        noteId: currentNoteId
+      }));
+    }
+  }, 2000);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // Ctrl+S to save
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    updateAutoSaveStatus('Saving...');
+    saveNote();
+  }
+
+  // Ctrl+N for new note
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    newNoteBtn?.click();
+  }
+
+  // Escape to close modals
+  if (e.key === 'Escape') {
+    const modal = document.querySelector('.ui-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+});
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, initializing app...');
+
+  // Create auto-save indicator
+  autoSaveIndicator = createAutoSaveIndicator();
+
+  // Initialize the editor
+  initializeSimpleEditor();
+
+  // Fetch existing notes
+  fetchNotes();
+
+  // Check for unsaved content
+  const unsavedContent = localStorage.getItem('unsaved_content');
+  if (unsavedContent) {
+    try {
+      const data = JSON.parse(unsavedContent);
+      UIComponents.createModal(
+        'Unsaved Changes Found',
+        `Found unsaved changes from ${new Date(data.timestamp).toLocaleString()}. Would you like to restore them?`,
+        [
+          {
+            text: 'Discard',
+            handler: () => {
+              localStorage.removeItem('unsaved_content');
+            }
+          },
+          {
+            text: 'Restore',
+            primary: true,
+            handler: () => {
+              if (titleInput) titleInput.value = data.title;
+              if (editor) {
+                editor.commands.setContent(data.content);
+              }
+              currentNoteId = data.noteId;
+              localStorage.removeItem('unsaved_content');
+              showAlert('Unsaved changes restored.', 'success');
+            }
+          }
+        ]
+      );
+    } catch (e) {
+      console.error('Error parsing unsaved content:', e);
+      localStorage.removeItem('unsaved_content');
+    }
+  }
+
+  // Focus on title input for better UX
+  if (titleInput) {
+    titleInput.focus();
+  }
+});
+
+// Handle page unload to save unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  const hasUnsavedChanges = titleInput?.value.trim() !== '' ||
+                          (editor && editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>');
+
+  if (hasUnsavedChanges) {
+    // Save to localStorage as backup
+    localStorage.setItem('unsaved_content', JSON.stringify({
+      title: titleInput?.value.trim() || '',
+      content: editor ? editor.getHTML().trim() : '',
+      noteId: currentNoteId,
+      timestamp: new Date().toISOString()
+    }));
+
+    // Show browser warning
+    e.preventDefault();
+    e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    return 'You have unsaved changes. Are you sure you want to leave?';
+  }
+});
+
+// Handle visibility change to save when tab becomes hidden
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    const hasUnsavedChanges = titleInput?.value.trim() !== '' ||
+                            (editor && editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>');
+
+    if (hasUnsavedChanges && isOnline) {
+      saveNote();
+    }
+  }
+});
+
+// Error handling for uncaught errors
+window.addEventListener('error', (e) => {
+  console.error('Uncaught error:', e.error);
+  showAlert('An unexpected error occurred. Please refresh the page if issues persist.', 'error');
+});
+
+// Handle unhandled promise rejections
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection:', e.reason);
+  showAlert('A network error occurred. Please check your connection.', 'error');
+});
+
+console.log('Notes app initialized successfully');
+
+
 
 </script>
