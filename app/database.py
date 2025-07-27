@@ -37,8 +37,8 @@ class Note(BaseModel):
     title = CharField()
     content = TextField()
     user = ForeignKeyField(User, backref="notes")
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField()
+    created_at = DateTimeField(default=datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=datetime.now(timezone.utc))
 
     is_active = BooleanField(default=True)  # Only the current version is active
     parent = ForeignKeyField('self', null=True, backref='versions')  # Reference to previous version
