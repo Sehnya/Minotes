@@ -158,6 +158,16 @@ titleInput.addEventListener("input", () => {
 
 saveBtn.addEventListener("click", saveNote);
 
+const newNoteBtn = document.getElementById('new-note-btn');
+
+newNoteBtn.addEventListener("click", () => {
+  titleInput.value = "";
+  textarea.value = "";
+  currentNoteId = null;
+  showAlert("Ready to write a new note.");
+});
+
+
 // Set username to sessionStorage after login
 fetch("/api/session")
   .then(res => res.json())
