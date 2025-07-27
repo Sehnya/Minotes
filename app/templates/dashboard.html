@@ -46,6 +46,9 @@ const textarea = document.getElementById('content');
 const saveBtn = document.getElementById('save-btn');
 const notesList = document.getElementById('notes-list-container');
 const logoutBtn = document.getElementById('logout-btn');
+const deleteBtn = document.getElementById('delete-btn');
+
+
 
 function showAlert(message) {
   const alertBox = document.createElement('div');
@@ -66,9 +69,10 @@ function saveNote() {
   const title = "Untitled Note";
 
   if (!content) return;
+function deleteNote() {
+    let notes = document.getElementsByTagName('textarea');
+}
 
-  const payload = { title, content };
-  if (currentNoteId) payload.note_id = currentNoteId;
 
   fetch("/save_note", {
     method: "POST",
@@ -100,10 +104,12 @@ function fetchNotes() {
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
         .forEach(note => {
           const div = document.createElement("div");
+
           div.innerHTML = `
             <h3>${note.title}</h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
             <p>${note.content}</p>
+            <button id="delete-btn" style="justify-self: center;" "></button>
             <hr>
           `;
           notesList.appendChild(div);
@@ -112,4 +118,21 @@ function fetchNotes() {
 }
 
 fetchNotes();
+
+async function deleteNote(noteId, username) {
+  const res = await fetch(`/user/${username}/notes/${noteId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    alert(data.message);
+    // Optionally refresh the note list
+    fetchNotes();
+  } else {
+    alert(data.error || 'Error deleting note.');
+  }
+}
+deleteBtn.addEventListener('click', deleteNote);
 </script>

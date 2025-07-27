@@ -180,15 +180,16 @@ def update_note(username,note_id):
 @app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(username, note_id):
     user = User.get_or_none(User.username == username)
-    if user is None:
-        abort(404, description="User not found")
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
     note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
-    if note is None:
-        abort(404, description="Note not found")
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
 
     note.delete_instance()
-    return jsonify({"message": "Note deleted"})
+    return jsonify({"message": "Note deleted successfully", "note_id": note_id}), 200
+
 
 @app.route("/save_note", methods=["POST"])
 def save_note():
@@ -223,6 +224,10 @@ def api_notes():
             for note in notes
         ]
     })
+
+
+
+
 
 logging.basicConfig(
     level=logging.DEBUG,
