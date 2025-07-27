@@ -1,5 +1,9 @@
+
+
 from peewee import *
 import os
+
+
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(
@@ -25,13 +29,19 @@ class User(BaseModel):
     class Meta:
         table_name = 'users'
 
-class Note(BaseModel):
+from peewee import *
+from datetime import datetime
 
-    query = None
-    id = PrimaryKeyField()
+class Note(BaseModel):
     title = CharField()
     content = TextField()
     user = ForeignKeyField(User, backref="notes")
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'notes'
+
 
     class Meta:
         table_name = 'notes'

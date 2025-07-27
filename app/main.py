@@ -201,24 +201,50 @@ def delete_note(username, note_id):
 
 
 
+from flask import request, jsonify, session
+from app.database import User, Note
+from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
+
 @app.route("/save_note", methods=["POST"])
 def save_note():
     if "user" not in session:
+        logger.warning("Unauthorized save_note attempt")
         return jsonify({"message": "Unauthorized"}), 401
 
     user = User.get_or_none(User.username == session["user"])
     if not user:
+        logger.warning("User not found during save_note")
         return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
-    title = data.get("title")
-    content = data.get("content")
+    title = data.get("title", "").strip()
+    content = data.get("content", "").strip()
 
     if not title or not content:
         return jsonify({"message": "Title and content required"}), 400
 
-    Note.create(title=title, content=content, user=user)
-    return jsonify({"message": "Note saved successfully."}), 200
+    # Check if a note with the same title exists for this user
+    existing_note = Note.get_or_none((Note.title == title) & (Note.user == user))
+
+    if existing_note:
+        logger.info(f"Updating note (ID: {existing_note.id}) for user: {user.username}")
+        existing_note.content = content
+        existing_note.updated_at = datetime.utcnow()
+        existing_note.save()
+        return jsonify({
+            "message": "Note updated successfully.",
+            "note_id": existing_note.id
+        }), 200
+    else:
+        new_note = Note.create(title=title, content=content, user=user)
+        logger.info(f"Created new note (ID: {new_note.id}) for user: {user.username}")
+        return jsonify({
+            "message": "Note saved successfully.",
+            "note_id": new_note.id
+        }), 200
 
 @app.route("/api/notes")
 def api_notes():
@@ -230,7 +256,13 @@ def api_notes():
 
     return jsonify({
         "notes": [
-            {"id": note.id, "title": note.title, "content": note.content}
+            {
+                "id": note.id,
+                "title": note.title,
+                "content": note.content,
+                "created_at": note.created_at.isoformat(),
+                "updated_at": note.updated_at.isoformat()
+            }
             for note in notes
         ]
     })
