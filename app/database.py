@@ -4,8 +4,7 @@ import os
 from datetime import datetime, timezone
 from time import tzname
 from peewee import *
-from sqlalchemy import DateTime
-from sqlalchemy.sql.functions import func
+
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(
