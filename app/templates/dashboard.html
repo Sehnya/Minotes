@@ -57,7 +57,7 @@ function showAlert(message) {
   setTimeout(() => alertBox.remove(), 3000);
 }
 
-logoutBtn.addEventListener('click', () => {
+logoutBtn?.addEventListener('click', () => {
   sessionStorage.clear();
   localStorage.clear();
   window.location.href = "/logout";
@@ -70,9 +70,10 @@ function saveNote() {
 
   const payload = { title, content };
 
+  const username = sessionStorage.getItem('user');
   const method = currentNoteId ? "PUT" : "POST";
-  const url = currentNoteId
-    ? `/user/${sessionStorage.getItem('user')}/notes/${currentNoteId}`
+  const url = currentNoteId && username
+    ? `/user/${username}/notes/${currentNoteId}`
     : `/save_note`;
 
   fetch(url, {
@@ -89,20 +90,22 @@ function saveNote() {
     });
 }
 
-// ⏱ Autosave 5 seconds after typing stops
-textarea.addEventListener("input", () => {
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(saveNote, 5000);
-});
-titleInput.addEventListener("input", () => {
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(saveNote, 5000);
-});
+function deleteNote(noteId) {
+  fetch(`/delete_note/${noteId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(data => {
+      showAlert(data.message || "Note deleted.");
+      fetchNotes();
+    })
+    .catch(err => {
+      console.error("Delete failed", err);
+      showAlert("Error deleting note.");
+    });
+}
 
-// 🖱 Manual Save
-saveBtn.addEventListener("click", saveNote);
-
-// 🔄 Load Notes
 function fetchNotes() {
   fetch("/api/notes", { credentials: "include" })
     .then(res => res.json())
@@ -119,46 +122,54 @@ function fetchNotes() {
             <hr>
           `;
           div.dataset.noteId = note.id;
-          div.addEventListener("click", () => {
+
+          div.addEventListener("click", (e) => {
+            if (e.target.classList.contains("delete-btn")) return; // Avoid conflict
             currentNoteId = note.id;
             titleInput.value = note.title;
             textarea.value = note.content;
           });
+
+          div.querySelector(".delete-btn").addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent parent click
+            deleteNote(note.id);
+          });
+
           notesList.appendChild(div);
         });
-    });
-}
-
-      // Attach delete handlers
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const id = btn.getAttribute("data-id");
-          deleteNote(id);
-        });
-      });
     })
     .catch(err => {
       console.error("Failed to fetch notes:", err);
     });
 }
 
-// 🗑 Delete Note
-function deleteNote(noteId) {
-  fetch(`/delete_note/${noteId}`, {
-    method: 'DELETE',
-    credentials: 'include'
-  })
+// Autosave after 5 seconds of inactivity
+textarea.addEventListener("input", () => {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(saveNote, 5000);
+});
+titleInput.addEventListener("input", () => {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(saveNote, 5000);
+});
+
+saveBtn.addEventListener("click", saveNote);
+
+// Set username to sessionStorage after login
+fetch("/api/session")
   .then(res => res.json())
   .then(data => {
-    showAlert(data.message || "Note deleted.");
-    fetchNotes();
+    if (data.logged_in && data.username) {
+      sessionStorage.setItem("user", data.username);
+      fetchNotes(); // Load notes after confirming session
+    } else {
+      window.location.href = "/login";
+    }
   })
   .catch(err => {
-    console.error("Delete failed", err);
-    showAlert("Error deleting note.");
+    console.error("Session check failed:", err);
+    window.location.href = "/login";
   });
-}
-
-fetchNotes(); // Initial load
 </script>
+
 
