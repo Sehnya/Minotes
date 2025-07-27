@@ -8,7 +8,7 @@ from forms import MyForm
 from database import User, Note, db
 from flask_cors import CORS
 import os
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 
 # import flask class, instance of class will be the app
 app = Flask(__name__)
@@ -201,11 +201,6 @@ def delete_note(username, note_id):
 
 
 
-from flask import request, jsonify, session
-from app.database import User, Note
-from datetime import datetime
-import logging
-
 logger = logging.getLogger(__name__)
 
 @app.route("/save_note", methods=["POST"])
@@ -232,8 +227,7 @@ def save_note():
     if existing_note:
         logger.info(f"Updating note (ID: {existing_note.id}) for user: {user.username}")
         existing_note.content = content
-        existing_note.updated_at = datetime.utcnow()
-        existing_note.save()
+        existing_note.updated_at = datetime.now(timezone.utc)
         return jsonify({
             "message": "Note updated successfully.",
             "note_id": existing_note.id
