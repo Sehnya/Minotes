@@ -3,8 +3,11 @@
 import os
 from datetime import datetime, timezone
 from time import tzname
+from pytz import timezone
+
 from peewee import *
 
+eastern = timezone("US/Eastern")
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(
@@ -37,9 +40,8 @@ class Note(BaseModel):
     title = CharField()
     content = TextField()
     user = ForeignKeyField(User, backref="notes")
-    created_at = DateTimeField(default=datetime.now(timezone.utc))
-    updated_at = DateTimeField(default=datetime.now(timezone.utc))
-
+    created_at = DateTimeField(default=lambda: datetime.now(eastern))
+    updated_at = DateTimeField(default=lambda: datetime.now(eastern))
     is_active = BooleanField(default=True)  # Only the current version is active
     parent = ForeignKeyField('self', null=True, backref='versions')  # Reference to previous version
     version = IntegerField(default=1)

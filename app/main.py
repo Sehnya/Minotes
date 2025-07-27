@@ -185,7 +185,7 @@ def update_note(username, note_id):
     title = data.get("title", old_note.title)
     content = data.get("content", old_note.content)
 
-    # Mark current note as inactive
+    # Deactivate current note
     old_note.is_active = False
     old_note.save()
 
@@ -197,6 +197,15 @@ def update_note(username, note_id):
         parent=old_note,
         version=old_note.version + 1
     )
+
+    # Keep only 5 most recent versions
+    old_versions = (Note.select()
+                    .where((Note.parent == old_note.parent or Note.parent == old_note)
+                           & (Note.user == user))
+                    .order_by(Note.updated_at.desc()))
+
+    for extra in list(old_versions)[5:]:
+        extra.delete_instance()
 
     return jsonify({
         "message": "Note updated",

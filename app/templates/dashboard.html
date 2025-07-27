@@ -64,24 +64,29 @@ logoutBtn.addEventListener('click', () => {
 });
 
 function saveNote() {
-  const content = textarea.value.trim();
   const title = titleInput.value.trim();
-  if (!content || !title) return;
+  const content = textarea.value.trim();
+  if (!title || !content) return;
 
   const payload = { title, content };
 
-  fetch("/save_note", {
-    method: "POST",
+  const method = currentNoteId ? "PUT" : "POST";
+  const url = currentNoteId
+    ? `/user/${sessionStorage.getItem('user')}/notes/${currentNoteId}`
+    : `/save_note`;
+
+  fetch(url, {
+    method,
     headers: { 'Content-Type': 'application/json' },
-    credentials: "include",
-    body: JSON.stringify(payload)
+    credentials: 'include',
+    body: JSON.stringify(payload),
   })
-  .then(res => res.json())
-  .then(data => {
-    showAlert(data.message || "Note saved.");
-    currentNoteId = data.note_id;
-    fetchNotes(); // Refresh the list after saving
-  });
+    .then(res => res.json())
+    .then(data => {
+      showAlert(data.message || "Note saved.");
+      currentNoteId = data.note_id;
+      fetchNotes();
+    });
 }
 
 // ⏱ Autosave 5 seconds after typing stops
@@ -103,12 +108,9 @@ function fetchNotes() {
     .then(res => res.json())
     .then(data => {
       notesList.innerHTML = "";
-
-      data.notes
-        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      data.notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
         .forEach(note => {
           const div = document.createElement("div");
-
           div.innerHTML = `
             <h3>${note.title}</h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
@@ -116,9 +118,16 @@ function fetchNotes() {
             <button class="delete-btn" data-id="${note.id}">Delete Note</button>
             <hr>
           `;
-
+          div.dataset.noteId = note.id;
+          div.addEventListener("click", () => {
+            currentNoteId = note.id;
+            titleInput.value = note.title;
+            textarea.value = note.content;
+          });
           notesList.appendChild(div);
         });
+    });
+}
 
       // Attach delete handlers
       document.querySelectorAll(".delete-btn").forEach(btn => {
