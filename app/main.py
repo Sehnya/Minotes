@@ -4,7 +4,7 @@ from typing import Any
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify
 import logging
 
-from app.forms import MyForm
+from forms import MyForm
 from database import User, Note, db
 from flask_cors import CORS
 import os
