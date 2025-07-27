@@ -121,11 +121,11 @@ fetchNotes();
 
 async function deleteNote(noteId, username) {
   const res = await fetch(`/user/${username}/notes/${noteId}`, {
-    method: 'DELETE',
-    credentials: 'include'
-  });
-
-  const data = await res.json();
+      method: 'DELETE',
+      credentials: 'include'
+  }
+);
+const data = await res.json();
   if (res.ok) {
     alert(data.message);
     // Optionally refresh the note list

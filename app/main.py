@@ -179,6 +179,7 @@ def update_note(username,note_id):
 
 @app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(username, note_id):
+
     user = User.get_or_none(User.username == username)
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -188,6 +189,7 @@ def delete_note(username, note_id):
         return jsonify({"error": "Note not found"}), 404
 
     note.delete_instance()
+    logging.info(f"Note {note_id} deleted for user {username}")
     return jsonify({"message": "Note deleted successfully", "note_id": note_id}), 200
 
 
@@ -230,8 +232,12 @@ def api_notes():
 
 
 logging.basicConfig(
-    level=logging.DEBUG,
-format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",  # Timestamp and level
+    handlers=[
+        logging.FileHandler("logs/app.log"),           # Save to file
+        logging.StreamHandler()                        # Output to console (for Render logs)
+    ]
 )
 logger = logging.getLogger(__name__)
 
