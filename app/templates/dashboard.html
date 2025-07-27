@@ -68,7 +68,6 @@ logoutBtn.addEventListener('click', () => {
 function saveNote() {
   const content = textarea.value.trim();
   const title = titleInput.value.trim();
-
   if (!content || !title) return;
 
   const payload = { title, content };
@@ -83,7 +82,7 @@ function saveNote() {
   .then(data => {
     showAlert(data.message || "Note saved.");
     currentNoteId = data.note_id;
-    fetchNotes();
+    fetchNotes(); // Refresh the list after saving
   });
 }
 
@@ -97,15 +96,15 @@ titleInput.addEventListener("input", () => {
   timeoutId = setTimeout(saveNote, 5000);
 });
 
-// 🖱 Save manually
+// 🖱 Manual Save
 saveBtn.addEventListener("click", saveNote);
-fetchNotes()
 
+// 🔄 Load Notes
 function fetchNotes() {
   fetch("/api/notes", { credentials: "include" })
     .then(res => res.json())
     .then(data => {
-      notesList.innerHTML = ""; // clear previous notes
+      notesList.innerHTML = "";
 
       data.notes
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
@@ -116,15 +115,43 @@ function fetchNotes() {
             <h3>${note.title}</h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
             <p>${note.content}</p>
-            <button id="delete-btn">Delete Note</button>
+            <button class="delete-btn" data-id="${note.id}">Delete Note</button>
             <hr>
           `;
 
           notesList.appendChild(div);
         });
+
+      // Attach delete handlers
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-id");
+          deleteNote(id);
+        });
+      });
     })
     .catch(err => {
       console.error("Failed to fetch notes:", err);
     });
 }
+
+// 🗑 Delete Note
+function deleteNote(noteId) {
+  fetch(`/delete_note/${noteId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  })
+  .then(res => res.json())
+  .then(data => {
+    showAlert(data.message || "Note deleted.");
+    fetchNotes();
+  })
+  .catch(err => {
+    console.error("Delete failed", err);
+    showAlert("Error deleting note.");
+  });
+}
+
+fetchNotes(); // Initial load
 </script>
+

@@ -288,6 +288,26 @@ def api_notes():
     })
 
 
+@app.route("/delete_note/<int:note_id>", methods=["DELETE"])
+def delete_note(note_id):
+    ip = request.remote_addr
+    username = session.get("user")
+
+    if not username:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user = User.get_or_none(User.username == username)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Find the note belonging to this user
+    note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
+    if not note:
+        return jsonify({"message": "Note not found"}), 404
+
+    note.delete_instance()
+    return jsonify({"message": "Note deleted successfully"}), 200
+
 
 logging.basicConfig(
     level=logging.INFO,
