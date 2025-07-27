@@ -96,8 +96,13 @@ saveBtn.addEventListener("click", saveNote);
 
 function fetchNotes() {
   fetch("/api/notes", { credentials: "include" })
-    .then(res => res.json())
+    .then(res => {
+      console.log("Status:", res.status);
+      return res.json();
+    })
     .then(data => {
+      console.log("Fetched notes:", data);
+
       notesList.innerHTML = "";
       data.notes
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
@@ -113,30 +118,15 @@ function fetchNotes() {
           notesList.appendChild(div);
         });
 
-      // Attach delete listeners AFTER rendering
       document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.addEventListener("click", () => {
           const noteId = btn.getAttribute("data-id");
           deleteNote(noteId);
         });
       });
+    })
+    .catch(err => {
+      console.error("Error fetching notes:", err);
     });
 }
-
-async function deleteNote(noteId) {
-  const res = await fetch(`/delete_note/${noteId}`, {
-    method: 'DELETE',
-    credentials: 'include'
-  });
-
-  const data = await res.json();
-  if (res.ok) {
-    showAlert(data.message);
-    fetchNotes();
-  } else {
-    showAlert(data.message || "Error deleting note.");
-  }
-}
-
-fetchNotes();
 </script>
