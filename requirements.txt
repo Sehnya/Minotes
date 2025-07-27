@@ -5,3 +5,4 @@ waitress~=3.0.2
 psycopg2-binary
 WTForms~=3.2.1
 pytz~=2025.2
+email_validator
