@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="stylesheet" href="https://use.typekit.net/tmb0jpk.css">
-
-    <title>Dashboard</title>
+<script src="https://unpkg.com/@tiptap/core@2.0.0-beta.75/dist/tiptap.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/starter-kit@2.0.0-beta.75/dist/tiptap-starter-kit.umd.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@tiptap/extension-document@2.0.0-beta.75/style.css" />
+        <title>Dashboard</title>
   </head>
   <body style="max-width: 100vw; margin: 0 auto; padding: 0; font-family: 'ff-providence-sans-web-pro';">
   <div id="header" style=" display: flex;'flex-wrap'; justify-content: space-between; align-items: center; padding: 20px;">
@@ -22,9 +24,7 @@
         <div id="editor-container" >
         <div id="editor-header"></div>
          <div id="input-field">
-             <textarea id="content" name="note" rows="30" cols="50" style="min-height: 75vh; max-height:75vh;max-width: 65vw; min-width: 65vw; font-family: 'ff-providence-sans-web-pro';">
-
-             </textarea>
+            <div id="editor"></div>
          </div>
             <div id="buttons-container" style="justify-self: center; justify-content: space-evenly; width: 400px;">
                 <button id="new-note-btn">New Note</button>
@@ -42,41 +42,205 @@
 </div>
   </body>
 </html>
-<script>
+<script type="module">
+  import { Editor } from 'https://esm.sh/@tiptap/core'
+import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
+
 let timeoutId;
 let currentNoteId = null;
+let editor;
+let autoSaveIndicator;
+let isOnline = navigator.onLine;
 
-const textarea = document.getElementById('content');
 const titleInput = document.getElementById('title');
 const saveBtn = document.getElementById('save-btn');
+const newNoteBtn = document.getElementById('new-note-btn');
 const notesList = document.getElementById('notes-list-container');
 const logoutBtn = document.getElementById('logout-btn');
 
-function showAlert(message) {
+// Enhanced alert system with types
+function showAlert(message, type = 'info') {
   const alertBox = document.createElement('div');
   alertBox.textContent = message;
-  alertBox.style.cssText = "background:#cce5ff;padding:10px;margin:10px 0;border-radius:5px;";
-  document.body.prepend(alertBox);
+
+  const colors = {
+    info: '#cce5ff',
+    success: '#d4edda',
+    error: '#f8d7da',
+    warning: '#fff3cd'
+  };
+
+  alertBox.style.cssText = `
+    background: ${colors[type]};
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    max-width: 300px;
+    border: 1px solid ${colors[type]};
+  `;
+
+  document.body.appendChild(alertBox);
   setTimeout(() => alertBox.remove(), 3000);
 }
 
-logoutBtn?.addEventListener('click', () => {
-  sessionStorage.clear();
-  localStorage.clear();
-  window.location.href = "/logout";
+// Auto-save status indicator
+function createAutoSaveIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'autosave-indicator';
+  indicator.style.cssText = `
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    display: none;
+  `;
+  document.body.appendChild(indicator);
+  return indicator;
+}
+
+function updateAutoSaveStatus(status) {
+  if (!autoSaveIndicator) return;
+
+  const colors = {
+    'typing...': '#ffa500',
+    'saving...': '#2196f3',
+    'saved': '#4caf50',
+    'error': '#f44336',
+    'offline': '#9e9e9e'
+  };
+
+  autoSaveIndicator.textContent = status;
+  autoSaveIndicator.style.backgroundColor = colors[status.toLowerCase()] || '#ccc';
+  autoSaveIndicator.style.color = 'white';
+  autoSaveIndicator.style.display = 'block';
+
+  // Hide after 2 seconds if saved or error
+  if (status.toLowerCase() === 'saved' || status.toLowerCase() === 'error') {
+    setTimeout(() => {
+      autoSaveIndicator.style.display = 'none';
+    }, 2000);
+  }
+}
+
+// Loading state management
+function showLoading(show = true) {
+  let loadingEl = document.getElementById('loading-overlay');
+
+  if (show && !loadingEl) {
+    loadingEl = document.createElement('div');
+    loadingEl.id = 'loading-overlay';
+    loadingEl.innerHTML = '<div>Loading...</div>';
+    loadingEl.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      color: white;
+      font-size: 18px;
+    `;
+    document.body.appendChild(loadingEl);
+  } else if (!show && loadingEl) {
+    loadingEl.remove();
+  }
+}
+
+// Network status monitoring
+window.addEventListener('online', () => {
+  isOnline = true;
+  showAlert('Connection restored', 'success');
+  updateAutoSaveStatus('Online');
 });
 
+window.addEventListener('offline', () => {
+  isOnline = false;
+  showAlert('You are offline. Changes will be saved when connection is restored.', 'warning');
+  updateAutoSaveStatus('Offline');
+});
+
+logoutBtn?.addEventListener('click', () => {
+  if (confirm('Are you sure you want to logout? Any unsaved changes will be lost.')) {
+    sessionStorage.clear();
+    localStorage.clear();
+    window.location.href = "/logout";
+  }
+});
+
+// Initialize TipTap editor with enhanced functionality
+editor = new Editor({
+  element: document.querySelector('#editor'),
+  extensions: [StarterKit],
+  content: '',
+  onUpdate: ({ editor }) => {
+    clearTimeout(timeoutId);
+    updateAutoSaveStatus('Typing...');
+
+    timeoutId = setTimeout(() => {
+      if (isOnline) {
+        updateAutoSaveStatus('Saving...');
+        saveNote();
+      } else {
+        updateAutoSaveStatus('Offline');
+        // Store changes locally when offline
+        localStorage.setItem('unsaved_content', JSON.stringify({
+          title: titleInput.value.trim(),
+          content: editor.getHTML().trim(),
+          noteId: currentNoteId
+        }));
+      }
+    }, 2000); // Reduced from 5000 to 2000 for better UX
+  }
+});
+
+// Enhanced save function with better error handling
 function saveNote() {
   const title = titleInput.value.trim();
-  const content = textarea.value.trim();
-  if (!title || !content) return;
+  const content = editor.getHTML().trim();
+
+  if (!title && !content) {
+    updateAutoSaveStatus('Error');
+    return;
+  }
+
+  if (!title) {
+    showAlert("Please provide a title for your note.", 'warning');
+    titleInput.focus();
+    updateAutoSaveStatus('Error');
+    return;
+  }
+
+  if (!content || content === '<p></p>') {
+    showAlert("Please add some content to your note.", 'warning');
+    editor.commands.focus();
+    updateAutoSaveStatus('Error');
+    return;
+  }
+
+  if (!isOnline) {
+    showAlert("You are offline. Note will be saved when connection is restored.", 'warning');
+    updateAutoSaveStatus('Offline');
+    return;
+  }
 
   const payload = { title, content };
-
-  const username = sessionStorage.getItem('user');
   const method = currentNoteId ? "PUT" : "POST";
-  const url = currentNoteId && username
-    ? `/user/${username}/notes/${currentNoteId}`
+  const url = currentNoteId
+    ? `/user/${sessionStorage.getItem('user')}/notes/${currentNoteId}`
     : `/save_note`;
 
   fetch(url, {
@@ -85,56 +249,152 @@ function saveNote() {
     credentials: 'include',
     body: JSON.stringify(payload),
   })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
     .then(data => {
-      showAlert(data.message || "Note saved.");
       currentNoteId = data.note_id;
+      updateAutoSaveStatus('Saved');
+      showAlert(data.message || "Note saved successfully.", 'success');
       fetchNotes();
+
+      // Clear any locally stored unsaved content
+      localStorage.removeItem('unsaved_content');
+    })
+    .catch(err => {
+      console.error("Save failed:", err);
+      updateAutoSaveStatus('Error');
+      showAlert("Error saving note. Please try again.", 'error');
+
+      // Store locally as backup
+      localStorage.setItem('unsaved_content', JSON.stringify({
+        title,
+        content,
+        noteId: currentNoteId,
+        timestamp: new Date().toISOString()
+      }));
     });
 }
 
+// Enhanced delete function with confirmation
 function deleteNote(noteId) {
+  if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+    return;
+  }
+
+  if (!isOnline) {
+    showAlert("Cannot delete notes while offline.", 'error');
+    return;
+  }
+
+  showLoading(true);
+
   fetch(`/delete_note/${noteId}`, {
     method: 'DELETE',
     credentials: 'include'
   })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
     .then(data => {
-      showAlert(data.message || "Note deleted.");
+      showAlert(data.message || "Note deleted successfully.", 'success');
+
+      // Clear editor if deleted note was currently open
+      if (currentNoteId === noteId) {
+        titleInput.value = "";
+        editor.commands.clearContent();
+        currentNoteId = null;
+        showAlert("Ready to write a new note.", 'info');
+      }
+
       fetchNotes();
     })
     .catch(err => {
       console.error("Delete failed", err);
-      showAlert("Error deleting note.");
+      showAlert("Error deleting note. Please try again.", 'error');
+    })
+    .finally(() => {
+      showLoading(false);
     });
 }
 
+// Enhanced fetch notes with loading state
 function fetchNotes() {
+  if (!isOnline) {
+    showAlert("Cannot fetch notes while offline.", 'warning');
+    return;
+  }
+
   fetch("/api/notes", { credentials: "include" })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
     .then(data => {
       notesList.innerHTML = "";
+
+      if (!data.notes || data.notes.length === 0) {
+        notesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No notes yet. Create your first note!</p>';
+        return;
+      }
+
       data.notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
         .forEach(note => {
           const div = document.createElement("div");
+          div.style.cssText = "cursor: pointer; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px; transition: background-color 0.2s;";
+
+          // Truncate content for preview
+          const previewContent = note.content.length > 100
+            ? note.content.substring(0, 100) + '...'
+            : note.content;
+
           div.innerHTML = `
-            <h3>${note.title}</h3>
-            <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
-            <p>${note.content}</p>
-            <button class="delete-btn" data-id="${note.id}">Delete Note</button>
-            <hr>
+            <h3 style="margin: 0 0 5px 0; color: #333;">${note.title}</h3>
+            <small style="color: #666;">Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
+            <div class="preview" style="margin: 10px 0; color: #555; font-size: 14px;">${previewContent}</div>
+            <button class="delete-btn" data-id="${note.id}" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">Delete Note</button>
+            <hr style="margin: 10px 0;">
           `;
           div.dataset.noteId = note.id;
 
+          // Hover effects
+          div.addEventListener("mouseenter", () => {
+            div.style.backgroundColor = "#f5f5f5";
+          });
+
+          div.addEventListener("mouseleave", () => {
+            div.style.backgroundColor = "transparent";
+          });
+
           div.addEventListener("click", (e) => {
-            if (e.target.classList.contains("delete-btn")) return; // Avoid conflict
+            if (e.target.classList.contains("delete-btn")) return;
+
+            // Check for unsaved changes
+            const hasUnsavedChanges = titleInput.value.trim() !== '' ||
+                                    (editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>');
+
+            if (hasUnsavedChanges && currentNoteId !== note.id) {
+              if (!confirm('You have unsaved changes. Do you want to continue without saving?')) {
+                return;
+              }
+            }
+
             currentNoteId = note.id;
             titleInput.value = note.title;
-            textarea.value = note.content;
+            editor.commands.setContent(note.content);
+            showAlert(`Opened: ${note.title}`, 'info');
           });
 
           div.querySelector(".delete-btn").addEventListener("click", (e) => {
-            e.stopPropagation(); // Prevent parent click
+            e.stopPropagation();
             deleteNote(note.id);
           });
 
@@ -143,46 +403,116 @@ function fetchNotes() {
     })
     .catch(err => {
       console.error("Failed to fetch notes:", err);
+      showAlert("Error loading notes. Please refresh the page.", 'error');
     });
 }
 
-// Autosave after 5 seconds of inactivity
-textarea.addEventListener("input", () => {
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(saveNote, 5000);
-});
-titleInput.addEventListener("input", () => {
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(saveNote, 5000);
+// Manual Save with feedback
+saveBtn.addEventListener("click", () => {
+  updateAutoSaveStatus('Saving...');
+  saveNote();
 });
 
-saveBtn.addEventListener("click", saveNote);
-
-const newNoteBtn = document.getElementById('new-note-btn');
-
+// Enhanced New Note with unsaved changes check
 newNoteBtn.addEventListener("click", () => {
+  const hasUnsavedChanges = titleInput.value.trim() !== '' ||
+                          (editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>');
+
+  if (hasUnsavedChanges) {
+    if (!confirm('You have unsaved changes. Do you want to create a new note without saving?')) {
+      return;
+    }
+  }
+
   titleInput.value = "";
-  textarea.value = "";
+  editor.commands.clearContent();
   currentNoteId = null;
-  showAlert("Ready to write a new note.");
+  titleInput.focus();
+  showAlert("Ready to write a new note.", 'info');
 });
 
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // Ctrl+S or Cmd+S to save
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    updateAutoSaveStatus('Saving...');
+    saveNote();
+  }
 
-// Set username to sessionStorage after login
+  // Ctrl+N or Cmd+N for new note
+  if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+    e.preventDefault();
+    newNoteBtn.click();
+  }
+});
+
+// Check for unsaved content on page load
+function checkForUnsavedContent() {
+  const unsavedContent = localStorage.getItem('unsaved_content');
+  if (unsavedContent) {
+    try {
+      const data = JSON.parse(unsavedContent);
+      if (confirm('You have unsaved changes from a previous session. Would you like to restore them?')) {
+        titleInput.value = data.title || '';
+        editor.commands.setContent(data.content || '');
+        currentNoteId = data.noteId || null;
+        showAlert('Previous session restored. Remember to save your changes.', 'info');
+      } else {
+        localStorage.removeItem('unsaved_content');
+      }
+    } catch (e) {
+      console.error('Error parsing unsaved content:', e);
+      localStorage.removeItem('unsaved_content');
+    }
+  }
+}
+
+// Enhanced session check and initialization
 fetch("/api/session")
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return res.json();
+  })
   .then(data => {
     if (data.logged_in && data.username) {
       sessionStorage.setItem("user", data.username);
-      fetchNotes(); // Load notes after confirming session
+
+      // Initialize auto-save indicator
+      autoSaveIndicator = createAutoSaveIndicator();
+
+      // Check for unsaved content
+      checkForUnsavedContent();
+
+      // Fetch notes
+      fetchNotes();
+
+      // Show welcome message
+      showAlert(`Welcome back, ${data.username}!`, 'success');
     } else {
       window.location.href = "/login";
     }
   })
   .catch(err => {
     console.error("Session check failed:", err);
-    window.location.href = "/login";
+    showAlert("Session expired. Redirecting to login...", 'error');
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 2000);
   });
+
+// Prevent accidental page leave with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  const hasUnsavedChanges = titleInput.value.trim() !== '' ||
+                          (editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>');
+
+  if (hasUnsavedChanges) {
+    e.preventDefault();
+    e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    return e.returnValue;
+  }
+});
+
 </script>
-
-
