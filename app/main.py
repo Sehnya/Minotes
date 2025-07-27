@@ -3,6 +3,8 @@ from typing import Any
 
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, flash, session, jsonify
 import logging
+
+from app.forms import MyForm
 from database import User, Note, db
 from flask_cors import CORS
 import os
@@ -32,32 +34,29 @@ def index():
         redirect(url_for("dashboard")) #Already logged in --> go to dash
     return render_template("index.html") # Not logged in --> landing page
 
-@app.route('/signup', methods=['GET','POST'])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-
-        #Basic Validation
-        if not username or not email or not password:
-            flash("All fields are required")
-            return redirect(url_for('signup'))
-
-        if User.get_or_none(User.username == username):
-            flash("Username already exists. Choose another one.")
-            return redirect(url_for('signup'))
-
-#Save user to database
+    form = MyForm()
+    if form.validate_on_submit():
+        logger.info("Signup form submitted with valid data.")
         try:
-            User.create(username=username, email=email, password=password)
-            session["user"] = username
-            flash('Signup successful')
-            return redirect("login")
+            new_user = User.create(
+                username=form.username.data,
+                email=form.email.data,
+                password=form.password.data
+            )
+            logger.info(f"User '{new_user.username}' created successfully.")
+            flash('Signup successful.')
+            return redirect(url_for('login'))
         except Exception as e:
-            flash (f"An error occurred: {str(e)}")
-            return redirect(url_for('signup'))
-    return render_template("signup.html")
+            logger.error(f"Error creating user: {str(e)}")
+            flash(f'Error creating user: {e}')
+    else:
+        if request.method == "POST":
+            logger.warning("Form submission failed validation.")
+            logger.debug(f"Form errors: {form.errors}")
+    return render_template('signup.html', form=form)
+
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -179,6 +178,8 @@ def update_note(username,note_id):
 
 from flask import request
 
+from flask import request
+
 @app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(username, note_id):
     ip = request.remote_addr
@@ -196,6 +197,7 @@ def delete_note(username, note_id):
     logger.info(f"[{ip}] User '{username}' deleted note {note_id}.")
 
     return jsonify({"message": "Note deleted successfully", "note_id": note_id}), 200
+
 
 
 
@@ -240,8 +242,7 @@ def api_notes():
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",  # Timestamp and level
-    handlers=[
-        logging.FileHandler("./logs/app.log"),           # Save to file
+    handlers=[           # Save to file
         logging.StreamHandler()                        # Output to console (for Render logs)
     ]
 )
