@@ -116,6 +116,7 @@ function fetchNotes() {
             <h3>${note.title}</h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
             <p>${note.content}</p>
+            <button id="delete-btn">Delete Note</button>
             <hr>
           `;
 

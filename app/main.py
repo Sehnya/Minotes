@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = "Elija11052017!"
 app.permanent_session_lifetime = timedelta(days=7)
 
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins='')
 
 logger = logging.getLogger(__name__)
 
@@ -174,19 +174,36 @@ def create_note(username):
 @app.route('/user/<username>/notes/<int:note_id>', methods=['PUT'])
 def update_note(username, note_id):
     user = User.get_or_none(User.username == username)
-    if user is None:
+    if not user:
         abort(404, description="User not found")
 
-    note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
-    if note is None:
+    old_note = Note.get_or_none((Note.id == note_id) & (Note.user == user) & (Note.is_active == True))
+    if not old_note:
         abort(404, description="Note not found")
 
     data = request.get_json()
-    note.title = data.get('title', note.title)
-    note.content = data.get('content', note.content)
-    note.save()
+    title = data.get("title", old_note.title)
+    content = data.get("content", old_note.content)
 
-    return jsonify({"message": "Note updated"}), 200
+    # Mark current note as inactive
+    old_note.is_active = False
+    old_note.save()
+
+    # Create new version
+    new_note = Note.create(
+        title=title,
+        content=content,
+        user=user,
+        parent=old_note,
+        version=old_note.version + 1
+    )
+
+    return jsonify({
+        "message": "Note updated",
+        "note_id": new_note.id,
+        "version": new_note.version
+    }), 200
+
 
 
 @app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
