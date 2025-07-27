@@ -1,4 +1,4 @@
-from flask_wtf import FlaskForm
+from wtforms.form import Form
 from wtforms import StringField, SubmitField, PasswordField
 from wtforms.validators import DataRequired, Email, ValidationError
 from database import User
@@ -6,7 +6,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class MyForm(FlaskForm):
+
+class MyForm(Form):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
