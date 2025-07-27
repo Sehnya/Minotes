@@ -237,39 +237,42 @@ def delete_note(username, note_id):
 @app.route("/save_note", methods=["POST"])
 def save_note():
     if "user" not in session:
-        logger.warning("Unauthorized save_note attempt")
         return jsonify({"message": "Unauthorized"}), 401
 
     user = User.get_or_none(User.username == session["user"])
     if not user:
-        logger.warning("User not found during save_note")
         return jsonify({"message": "User not found"}), 404
 
     data = request.get_json()
     title = data.get("title", "").strip()
     content = data.get("content", "").strip()
+    note_id = data.get("note_id")  # Add this line
 
     if not title or not content:
         return jsonify({"message": "Title and content required"}), 400
 
-    # Check if a note with the same title exists for this user
-    existing_note = Note.get_or_none((Note.title == title) & (Note.user == user))
+    # Update by ID if provided, otherwise check by title
+    if note_id:
+        existing_note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
+    else:
+        existing_note = Note.get_or_none((Note.title == title) & (Note.user == user))
 
     if existing_note:
-        logger.info(f"Updating note (ID: {existing_note.id}) for user: {user.username}")
+        existing_note.title = title  # Allow title updates
         existing_note.content = content
         existing_note.updated_at = datetime.now(timezone.utc)
+        existing_note.save()
         return jsonify({
             "message": "Note updated successfully.",
             "note_id": existing_note.id
         }), 200
     else:
         new_note = Note.create(title=title, content=content, user=user)
-        logger.info(f"Created new note (ID: {new_note.id}) for user: {user.username}")
         return jsonify({
             "message": "Note saved successfully.",
             "note_id": new_note.id
         }), 200
+
 
 
 @app.route("/api/notes")

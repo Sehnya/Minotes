@@ -3,43 +3,629 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link rel="stylesheet" href="https://use.typekit.net/tmb0jpk.css">
-<script src="https://unpkg.com/@tiptap/core@2.0.0-beta.75/dist/tiptap.umd.js"></script>
-<script src="https://unpkg.com/@tiptap/starter-kit@2.0.0-beta.75/dist/tiptap-starter-kit.umd.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/@tiptap/extension-document@2.0.0-beta.75/style.css" />
+
+    <script src="https://unpkg.com/@tiptap/core@2.0.0/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@tiptap/starter-kit@2.0.0/dist/index.umd.js"></script>
         <title>Dashboard</title>
   </head>
-  <body style="max-width: 100vw; margin: 0 auto; padding: 0; font-family: 'ff-providence-sans-web-pro';">
-  <div id="header" style=" display: flex;'flex-wrap'; justify-content: space-between; align-items: center; padding: 20px;">
-    <h1 style="position: relative; left: 50%">Dashboard</h1>
-      <button id="logout-btn">Log Out</button>
-  </div>
-  <div id="main" style="grid-area: main; column-count:  2; column-gap: 1px; column-width: 500px; row-gap: 1px; display: flex; text-align: center; margin:0; padding: 0;">
+  <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-      <div id="main-content" style="justify-content: space-evenly; max-width: 100vw; overflow: auto; position: relative; margin: 0 auto; width: 100%;" >
-          <h1 >Create Note</h1>
-          <div id="title-container" style="margin-bottom: 5px; margin-top: -13px">
-              <input id="title" type="text" name="title" id="title" placeholder="Title" style="height: 3vh; width: 65vw; font-family: 'ff-providence-sans-web-pro';"/>
-          </div>
-        <div id="editor-container" >
-        <div id="editor-header"></div>
-         <div id="input-field">
-            <div id="editor" style="width: 40vw; height: 65vh; justify-self: center; padding-top: 20px;"></div>
-         </div>
-            <div id="buttons-container" style="justify-self: center; justify-content: space-evenly; width: 400px;">
-                <button id="new-note-btn">New Note</button>
-             <button id="save-btn">Save Note</button>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .user-info {
+            color: #6c757d;
+            font-size: 14px;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #495057;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: #007bff !important;
+            color: white !important;
+            border-color: #007bff !important;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3 !important;
+            border-color: #0056b3 !important;
+        }
+
+        .btn-success {
+            background: #28a745 !important;
+            color: white !important;
+            border-color: #28a745 !important;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34 !important;
+            border-color: #1e7e34 !important;
+        }
+
+        .btn-danger {
+            background: #dc3545 !important;
+            color: white !important;
+            border-color: #dc3545 !important;
+        }
+
+        .btn-danger:hover {
+            background: #c82333 !important;
+            border-color: #c82333 !important;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            min-height: 70vh;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            color: #495057;
+            margin: 0;
+        }
+
+        .notes-count {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        #notes-list-container {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        #notes-list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #notes-list-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        #notes-list-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #notes-list-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .editor-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .title-input-container {
+            position: relative;
+        }
+
+        #title {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            background: white;
+            color: #2c3e50;
+            transition: all 0.2s ease;
+        }
+
+        #title:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        #title::placeholder {
+            color: #adb5bd;
+            font-weight: 400;
+        }
+
+        .editor-content {
+            padding: 30px;
+        }
+
+        #editor {
+            min-height: 400px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        #editor:focus-within {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .ProseMirror {
+            padding: 20px;
+            outline: none;
+            min-height: 350px;
+            font-size: 16px;
+            line-height: 1.7;
+            color: #2c3e50;
+        }
+
+        .ProseMirror p {
+            margin-bottom: 16px;
+        }
+
+        .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .ProseMirror h1 {
+            font-size: 28px;
+        }
+
+        .ProseMirror h2 {
+            font-size: 24px;
+        }
+
+        .ProseMirror h3 {
+            font-size: 20px;
+        }
+
+        .ProseMirror ul, .ProseMirror ol {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .ProseMirror li {
+            margin-bottom: 8px;
+        }
+
+        .ProseMirror blockquote {
+            border-left: 4px solid #007bff;
+            padding-left: 16px;
+            margin: 16px 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .ProseMirror code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            color: #e83e8c;
+        }
+
+        .ProseMirror pre {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .ProseMirror pre code {
+            background: none;
+            padding: 0;
+            color: #2c3e50;
+        }
+
+        .editor-footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .editor-info {
+            color: #6c757d;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .word-count {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+
+        .status-dot.saving {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.error {
+            background: #dc3545;
+        }
+
+        .status-dot.offline {
+            background: #6c757d;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 12px;
+            color: #495057;
+            font-size: 20px;
+        }
+
+        .empty-state p {
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 300px 1fr;
+                gap: 20px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                padding: 15px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .editor-section {
+                order: 1;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .editor-content {
+                padding: 20px;
+            }
+
+            .editor-footer {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            #notes-list-container {
+                max-height: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 15px;
+            }
+
+            .editor-content {
+                padding: 15px;
+            }
+
+            .ProseMirror {
+                padding: 15px;
+                min-height: 250px;
+            }
+
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            #title {
+                font-size: 16px;
+                padding: 10px 12px;
+            }
+        }
+
+        /* Loading and Animation States */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Focus and Accessibility */
+        button:focus,
+        #title:focus,
+        .ProseMirror:focus {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .sidebar,
+            .header-buttons,
+            .editor-footer {
+                display: none !important;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .editor-section {
+                box-shadow: none;
+                border: none;
+            }
+
+            .ProseMirror {
+                border: none;
+                padding: 0;
+            }
+        }
+    </style>
+
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-left">
+                <h1>📝 My Notes</h1>
+                {% if user %}
+                <div class="user-info">
+                    👤 Welcome, {{ user.username }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="header-buttons">
+                <button id="new-note-btn" class="btn-primary" title="Create New Note (Ctrl+N)">
+                    ➕ New Note
+                </button>
+                <button id="save-btn" class="btn-success" title="Save Note (Ctrl+S)">
+                    💾 Save
+                </button>
+                <button id="logout-btn" class="btn-danger" title="Logout">
+                    🚪 Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar - Notes List -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>📋 Your Notes</h2>
+                    <div class="notes-count" id="notes-count">0</div>
+                </div>
+                <div id="notes-list-container">
+                    <!-- Notes will be loaded here dynamically -->
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <h3>No notes yet</h3>
+                        <p>Create your first note to get started!</p>
+                        <button class="btn-primary" onclick="document.getElementById('new-note-btn').click()">
+                            ➕ Create First Note
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Section -->
+            <div class="editor-section">
+                <div class="editor-header">
+                    <div class="title-input-container">
+                        <input
+                            type="text"
+                            id="title"
+                            placeholder="Enter your note title..."
+                            maxlength="200"
+                            autocomplete="off"
+                            spellcheck="true"
+                        >
+                    </div>
+                </div>
+
+                <div class="editor-content">
+                    <div id="editor"></div>
+                </div>
+
+                <div class="editor-footer">
+                    <div class="editor-info">
+                        <div class="word-count" id="word-count">0 words</div>
+                        <div class="status-indicator">
+                            <div class="status-dot" id="status-dot"></div>
+                            <span id="status-text">Ready</span>
+                        </div>
+                    </div>
+                    <div class="editor-actions">
+                        <button id="clear-btn" title="Clear Editor">
+                            🗑️ Clear
+                        </button>
+                        <button id="export-btn" title="Export Note">
+                            📤 Export
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-      </div>
-    <div id="right-sb" style="width:50%; display: inline-block; position: relative; text-align: center; flex-direction: column; min-width: 350px ">
-    <h1 style="position: relative;">Notes</h1>
-        <div id="notes-list-container" style="display: flex; flex-direction: column; justify-content: space-around; ">
-
-
-        </div>
     </div>
-</div>
   </body>
 </html>
 <script type="module">
@@ -50,453 +636,45 @@ import { Underline } from 'https://esm.sh/@tiptap/extension-underline'
 import { ListItem } from 'https://esm.sh/@tiptap/extension-list-item'
 import { BulletList } from 'https://esm.sh/@tiptap/extension-bullet-list'
 import { OrderedList } from 'https://esm.sh/@tiptap/extension-ordered-list'
-
-let timeoutId;
-let currentNoteId = null;
+// Global variables
 let editor;
-let autoSaveIndicator;
+let currentNoteId = null;
+let timeoutId;
 let isOnline = navigator.onLine;
+let autoSaveIndicator;
 
-const titleInput = document.getElementById('title');
-const saveBtn = document.getElementById('save-btn');
-const newNoteBtn = document.getElementById('new-note-btn');
-const notesList = document.getElementById('notes-list-container');
-const logoutBtn = document.getElementById('logout-btn');
-const loginBtn = document.getElementById('login-btn');
+// DOM elements
+const titleInput = document.getElementById("title");
+const saveBtn = document.getElementById("save-btn");
+const newNoteBtn = document.getElementById("new-note-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const loginBtn = document.getElementById("login-btn");
+const notesList = document.getElementById("notes-list-container");
+
+// Network status monitoring
+window.addEventListener('online', () => {
+  isOnline = true;
+  updateAutoSaveStatus('Online');
+  showAlert('Connection restored', 'success');
+});
+
+window.addEventListener('offline', () => {
+  isOnline = false;
+  updateAutoSaveStatus('Offline');
+  showAlert('You are offline', 'warning');
+});
 
 // UI Components
 const UIComponents = {
-  // Simple Editor Toolbar
-  createSimpleToolbar() {
-    const toolbar = document.createElement('div');
-    toolbar.className = 'simple-toolbar';
-    toolbar.style.cssText = `
-      display: flex;
-      gap: 8px;
-      padding: 8px;
-      border: 1px solid #e1e5e9;
-      border-bottom: none;
-      background: #f8f9fa;
-      border-radius: 6px 6px 0 0;
-      flex-wrap: wrap;
-    `;
-
-    const buttons = [
-      { command: 'bold', icon: 'B', title: 'Bold (Ctrl+B)' },
-      { command: 'italic', icon: 'I', title: 'Italic (Ctrl+I)' },
-      { command: 'underline', icon: 'U', title: 'Underline (Ctrl+U)' },
-      { command: 'strike', icon: 'S', title: 'Strikethrough' },
-      { command: 'separator' },
-      { command: 'heading1', icon: 'H1', title: 'Heading 1' },
-      { command: 'heading2', icon: 'H2', title: 'Heading 2' },
-      { command: 'paragraph', icon: 'P', title: 'Paragraph' },
-      { command: 'separator' },
-      { command: 'bulletList', icon: '•', title: 'Bullet List' },
-      { command: 'orderedList', icon: '1.', title: 'Numbered List' },
-      { command: 'separator' },
-      { command: 'blockquote', icon: '"', title: 'Quote' },
-      { command: 'codeBlock', icon: '</>', title: 'Code Block' },
-      { command: 'separator' },
-      { command: 'undo', icon: '↶', title: 'Undo (Ctrl+Z)' },
-      { command: 'redo', icon: '↷', title: 'Redo (Ctrl+Y)' }
-    ];
-
-    buttons.forEach(btn => {
-      if (btn.command === 'separator') {
-        const separator = document.createElement('div');
-        separator.style.cssText = 'width: 1px; background: #e1e5e9; margin: 0 4px;';
-        toolbar.appendChild(separator);
-        return;
-      }
-
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.innerHTML = btn.icon;
-      button.title = btn.title;
-      button.dataset.command = btn.command;
-      button.style.cssText = `
-        padding: 6px 8px;
-        border: 1px solid transparent;
-        background: transparent;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 12px;
-        min-width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        color: #333;
-      `;
-
-      button.addEventListener('mouseenter', () => {
-        if (!button.classList.contains('active')) {
-          button.style.background = '#e9ecef';
-          button.style.borderColor = '#dee2e6';
-        }
-      });
-
-      button.addEventListener('mouseleave', () => {
-        if (!button.classList.contains('active')) {
-          button.style.background = 'transparent';
-          button.style.borderColor = 'transparent';
-        }
-      });
-
-      button.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.executeCommand(btn.command);
-      });
-
-      toolbar.appendChild(button);
-    });
-
-    return toolbar;
-  },
-
-  executeCommand(command) {
-    if (!editor) return;
-
-    const commands = {
-      bold: () => editor.chain().focus().toggleBold().run(),
-      italic: () => editor.chain().focus().toggleItalic().run(),
-      underline: () => editor.chain().focus().toggleUnderline().run(),
-      strike: () => editor.chain().focus().toggleStrike().run(),
-      heading1: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-      heading2: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-      paragraph: () => editor.chain().focus().setParagraph().run(),
-      bulletList: () => editor.chain().focus().toggleBulletList().run(),
-      orderedList: () => editor.chain().focus().toggleOrderedList().run(),
-      blockquote: () => editor.chain().focus().toggleBlockquote().run(),
-      codeBlock: () => editor.chain().focus().toggleCodeBlock().run(),
-      undo: () => editor.chain().focus().undo().run(),
-      redo: () => editor.chain().focus().redo().run()
-    };
-
-    if (commands[command]) {
-      commands[command]();
-      this.updateToolbarState();
+  createModal: (title, message, buttons = []) => {
+    const existingModal = document.querySelector('.ui-modal');
+    if (existingModal) {
+      existingModal.remove();
     }
-  },
 
-  updateToolbarState() {
-    if (!editor) return;
-
-    const toolbar = document.querySelector('.simple-toolbar');
-    if (!toolbar) return;
-
-    const buttons = toolbar.querySelectorAll('button');
-    buttons.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = 'transparent';
-      btn.style.borderColor = 'transparent';
-      btn.style.color = '#333';
-    });
-
-    // Update active states based on current selection
-    const activeStates = {
-      bold: editor.isActive('bold'),
-      italic: editor.isActive('italic'),
-      underline: editor.isActive('underline'),
-      strike: editor.isActive('strike'),
-      heading1: editor.isActive('heading', { level: 1 }),
-      heading2: editor.isActive('heading', { level: 2 }),
-      bulletList: editor.isActive('bulletList'),
-      orderedList: editor.isActive('orderedList'),
-      blockquote: editor.isActive('blockquote'),
-      codeBlock: editor.isActive('codeBlock')
-    };
-
-    buttons.forEach(btn => {
-      const command = btn.dataset.command;
-      if (command && activeStates[command]) {
-        btn.classList.add('active');
-        btn.style.background = '#007bff';
-        btn.style.color = 'white';
-        btn.style.borderColor = '#007bff';
-      }
-    });
-  },
-
-  // Modal Component
-  createModal(title, content, actions = []) {
     const modal = document.createElement('div');
     modal.className = 'ui-modal';
     modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-    `;
-
-    const modalContent = document.createElement('div');
-    modalContent.style.cssText = `
-      background: white;
-      border-radius: 8px;
-      padding: 24px;
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    `;
-
-    const modalHeader = document.createElement('div');
-    modalHeader.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #e1e5e9;
-    `;
-
-    const modalTitle = document.createElement('h3');
-    modalTitle.textContent = title;
-    modalTitle.style.cssText = 'margin: 0; color: #333;';
-
-    const closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '×';
-    closeBtn.style.cssText = `
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #666;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-
-    closeBtn.addEventListener('click', () => modal.remove());
-
-    modalHeader.appendChild(modalTitle);
-    modalHeader.appendChild(closeBtn);
-
-    const modalBody = document.createElement('div');
-    modalBody.innerHTML = content;
-    modalBody.style.cssText = 'margin-bottom: 16px;';
-
-    const modalFooter = document.createElement('div');
-    modalFooter.style.cssText = `
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      padding-top: 16px;
-      border-top: 1px solid #e1e5e9;
-    `;
-
-    actions.forEach(action => {
-      const btn = document.createElement('button');
-      btn.textContent = action.text;
-      btn.style.cssText = `
-        padding: 8px 16px;
-        border: 1px solid ${action.primary ? '#007bff' : '#dee2e6'};
-        background: ${action.primary ? '#007bff' : 'white'};
-        color: ${action.primary ? 'white' : '#333'};
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-      `;
-
-      btn.addEventListener('click', () => {
-        if (action.handler) action.handler();
-        modal.remove();
-      });
-
-      modalFooter.appendChild(btn);
-    });
-
-    modalContent.appendChild(modalHeader);
-    modalContent.appendChild(modalBody);
-    modalContent.appendChild(modalFooter);
-    modal.appendChild(modalContent);
-
-    // Close on backdrop click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
-    });
-
-    document.body.appendChild(modal);
-    return modal;
-  },
-
-  // Button Component
-  createButton(text, options = {}) {
-    const button = document.createElement('button');
-    button.textContent = text;
-
-    const defaultStyle = `
-      padding: 8px 16px;
-      border: 1px solid ${options.variant === 'primary' ? '#007bff' : '#dee2e6'};
-      background: ${options.variant === 'primary' ? '#007bff' : options.variant === 'danger' ? '#dc3545' : 'white'};
-      color: ${options.variant === 'primary' || options.variant === 'danger' ? 'white' : '#333'};
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-      ${options.disabled ? 'opacity: 0.6; cursor: not-allowed;' : ''}
-    `;
-
-    button.style.cssText = defaultStyle + (options.style || '');
-
-    if (!options.disabled) {
-      button.addEventListener('mouseenter', () => {
-        if (options.variant === 'primary') {
-          button.style.background = '#0056b3';
-        } else if (options.variant === 'danger') {
-          button.style.background = '#c82333';
-        } else {
-          button.style.background = '#f8f9fa';
-        }
-      });
-
-      button.addEventListener('mouseleave', () => {
-        button.style.cssText = defaultStyle + (options.style || '');
-      });
-    }
-
-    if (options.onClick && !options.disabled) {
-      button.addEventListener('click', options.onClick);
-    }
-
-    return button;
-  }
-};
-
-// Enhanced alert system with UI components
-function showAlert(message, type = 'info') {
-  const alertBox = document.createElement('div');
-  alertBox.textContent = message;
-
-  const colors = {
-    info: { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' },
-    success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724' },
-    error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
-    warning: { bg: '#fff3cd', border: '#ffeaa7', text: '#856404' }
-  };
-
-  const color = colors[type];
-  alertBox.style.cssText = `
-    background: ${color.bg};
-    color: ${color.text};
-    border: 1px solid ${color.border};
-    padding: 12px 16px;
-    margin: 10px 0;
-    border-radius: 6px;
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    max-width: 350px;
-    font-size: 14px;
-    animation: slideIn 0.3s ease;
-  `;
-
-  // Add slide-in animation
-  if (!document.getElementById('alert-styles')) {
-    const style = document.createElement('style');
-    style.id = 'alert-styles';
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  document.body.appendChild(alertBox);
-  setTimeout(() => alertBox.remove(), 4000);
-}
-
-// Auto-save status indicator with better UI
-function createAutoSaveIndicator() {
-  const indicator = document.createElement('div');
-  indicator.id = 'autosave-indicator';
-  indicator.style.cssText = `
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    z-index: 1000;
-    transition: all 0.3s ease;
-    display: none;
-    font-weight: 500;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  `;
-  document.body.appendChild(indicator);
-  return indicator;
-}
-
-function updateAutoSaveStatus(status) {
-  if (!autoSaveIndicator) return;
-
-  const colors = {
-    'typing...': { bg: '#ffa500', text: 'white' },
-    'saving...': { bg: '#2196f3', text: 'white' },
-    'saved': { bg: '#4caf50', text: 'white' },
-    'error': { bg: '#f44336', text: 'white' },
-    'offline': { bg: '#9e9e9e', text: 'white' }
-  };
-
-  const color = colors[status.toLowerCase()] || { bg: '#ccc', text: 'black' };
-  autoSaveIndicator.textContent = status;
-  autoSaveIndicator.style.backgroundColor = color.bg;
-  autoSaveIndicator.style.color = color.text;
-  autoSaveIndicator.style.display = 'block';
-
-  if (status.toLowerCase() === 'saved' || status.toLowerCase() === 'error') {
-    setTimeout(() => {
-      autoSaveIndicator.style.display = 'none';
-    }, 2000);
-  }
-}
-
-// Loading state with UI component
-function showLoading(show = true) {
-  let loadingEl = document.getElementById('loading-overlay');
-
-  if (show && !loadingEl) {
-    loadingEl = document.createElement('div');
-    loadingEl.id = 'loading-overlay';
-    loadingEl.innerHTML = `
-      <div style="
-        background: white;
-        padding: 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      ">
-        <div style="
-          width: 20px;
-          height: 20px;
-          border: 2px solid #f3f3f3;
-          border-top: 2px solid #007bff;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        "></div>
-        <span>Loading...</span>
-      </div>
-    `;
-    loadingEl.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
@@ -506,187 +684,301 @@ function showLoading(show = true) {
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 9999;
+      z-index: 10000;
     `;
 
-    // Add spinner animation
-    if (!document.getElementById('spinner-styles')) {
-      const style = document.createElement('style');
-      style.id = 'spinner-styles';
-      style.textContent = `
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    `;
 
-    document.body.appendChild(loadingEl);
-  } else if (!show && loadingEl) {
-    loadingEl.remove();
+    const modalTitle = document.createElement('h3');
+    modalTitle.textContent = title;
+    modalTitle.style.cssText = `
+      margin: 0 0 16px 0;
+      color: #333;
+      font-size: 18px;
+    `;
+
+    const modalMessage = document.createElement('p');
+    modalMessage.textContent = message;
+    modalMessage.style.cssText = `
+      margin: 0 0 24px 0;
+      color: #666;
+      line-height: 1.5;
+    `;
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    `;
+
+    buttons.forEach(buttonConfig => {
+      const button = document.createElement('button');
+      button.textContent = buttonConfig.text;
+      button.style.cssText = `
+        padding: 8px 16px;
+        border: 1px solid ${buttonConfig.primary ? '#007bff' : '#ddd'};
+        background: ${buttonConfig.primary ? '#007bff' : 'white'};
+        color: ${buttonConfig.primary ? 'white' : '#333'};
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+      `;
+
+      button.addEventListener('mouseenter', () => {
+        if (buttonConfig.primary) {
+          button.style.background = '#0056b3';
+        } else {
+          button.style.background = '#f8f9fa';
+        }
+      });
+
+      button.addEventListener('mouseleave', () => {
+        button.style.background = buttonConfig.primary ? '#007bff' : 'white';
+      });
+
+      button.addEventListener('click', () => {
+        modal.remove();
+        if (buttonConfig.handler) {
+          buttonConfig.handler();
+        }
+      });
+
+      buttonContainer.appendChild(button);
+    });
+
+    modalContent.appendChild(modalTitle);
+    modalContent.appendChild(modalMessage);
+    modalContent.appendChild(buttonContainer);
+    modal.appendChild(modalContent);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    document.body.appendChild(modal);
+    return modal;
+  }
+};
+
+// Alert system
+function showAlert(message, type = 'info') {
+  const existingAlert = document.querySelector('.custom-alert');
+  if (existingAlert) {
+    existingAlert.remove();
+  }
+
+  const alert = document.createElement('div');
+  alert.className = 'custom-alert';
+
+  const colors = {
+    success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724' },
+    error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
+    warning: { bg: '#fff3cd', border: '#ffeaa7', text: '#856404' },
+    info: { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' }
+  };
+
+  const color = colors[type] || colors.info;
+
+  alert.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${color.bg};
+    color: ${color.text};
+    border: 1px solid ${color.border};
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 9999;
+    max-width: 300px;
+    font-size: 14px;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  alert.textContent = message;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(alert);
+
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.style.animation = 'slideIn 0.3s ease-out reverse';
+      setTimeout(() => alert.remove(), 300);
+    }
+  }, 4000);
+}
+
+// Loading indicator
+function showLoading(show) {
+  const existingLoader = document.querySelector('.loading-overlay');
+  if (existingLoader) {
+    existingLoader.remove();
+  }
+
+  if (show) {
+    const loader = document.createElement('div');
+    loader.className = 'loading-overlay';
+    loader.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9998;
+    `;
+
+    const spinner = document.createElement('div');
+    spinner.style.cssText = `
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    loader.appendChild(spinner);
+    document.body.appendChild(loader);
   }
 }
 
-// Network status monitoring
-window.addEventListener('online', () => {
-  isOnline = true;
-  showAlert('Connection restored', 'success');
-  updateAutoSaveStatus('Online');
-});
+// Auto-save status indicator
+function createAutoSaveIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'auto-save-indicator';
+  indicator.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #6c757d;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    display: none;
+  `;
+  document.body.appendChild(indicator);
+  return indicator;
+}
 
-window.addEventListener('offline', () => {
-  isOnline = false;
-  showAlert('You are offline. Changes will be saved when connection is restored.', 'warning');
-  updateAutoSaveStatus('Offline');
-});
+function updateAutoSaveStatus(status) {
+  if (!autoSaveIndicator) return;
 
-// Initialize Simple Editor with toolbar
+  const statusConfig = {
+    'Typing...': { color: '#ffc107', text: '✏️ Typing...' },
+    'Saving...': { color: '#17a2b8', text: '💾 Saving...' },
+    'Saved': { color: '#28a745', text: '✅ Saved' },
+    'Error': { color: '#dc3545', text: '❌ Error' },
+    'Offline': { color: '#6c757d', text: '📡 Offline' },
+    'Online': { color: '#28a745', text: '🌐 Online' }
+  };
+
+  const config = statusConfig[status] || statusConfig['Saved'];
+
+  autoSaveIndicator.style.display = 'block';
+  autoSaveIndicator.style.borderColor = config.color;
+  autoSaveIndicator.style.color = config.color;
+  autoSaveIndicator.textContent = config.text;
+
+  if (status === 'Saved' || status === 'Online') {
+    setTimeout(() => {
+      if (autoSaveIndicator) {
+        autoSaveIndicator.style.display = 'none';
+      }
+    }, 2000);
+  }
+}
+
+// Initialize Tiptap Editor
 function initializeSimpleEditor() {
-  const editorContainer = document.querySelector('#editor');
-  if (!editorContainer) {
-    console.error('Editor container not found! Make sure you have <div id="editor"></div> in your HTML');
+  if (typeof window.TiptapEditor === 'undefined') {
+    console.error('Tiptap not loaded. Please include Tiptap scripts.');
     return;
   }
 
-  // Clear any existing content
-  editorContainer.innerHTML = '';
+  const editorElement = document.getElementById('editor');
+  if (!editorElement) {
+    console.error('Editor element not found');
+    return;
+  }
 
-  // Create toolbar
-  const toolbar = UIComponents.createSimpleToolbar();
-  editorContainer.parentNode.insertBefore(toolbar, editorContainer);
-
-  // Style the editor container
-  editorContainer.style.cssText = `
-    border: 1px solid #e1e5e9;
-    border-top: none;
-    border-radius: 0 0 6px 6px;
-    min-height: 300px;
-    padding: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    outline: none;
-    background: white;
-  `;
-
-  // Initialize TipTap editor with correct syntax
-  editor = new Editor({
-    element: editorContainer,
-    extensions: [
-      StarterKit,
-      Underline,
-      ListItem,
-      BulletList.configure({
-        HTMLAttributes: {
-          class: 'bullet-list',
-        },
-      }),
-      OrderedList.configure({
-        HTMLAttributes: {
-          class: 'ordered-list',
-        },
-      }),
-    ],
-    content: '<p>Start writing your note...</p>',
-    editorProps: {
-      attributes: {
-        class: 'tiptap-editor',
-        spellcheck: 'true',
-      },
-    },
-    onUpdate: ({ editor }) => {
-      clearTimeout(timeoutId);
-      updateAutoSaveStatus('Typing...');
-      UIComponents.updateToolbarState();
-
-      timeoutId = setTimeout(() => {
-        if (isOnline) {
-          updateAutoSaveStatus('Saving...');
-          saveNote();
-        } else {
-          updateAutoSaveStatus('Offline');
-          localStorage.setItem('unsaved_content', JSON.stringify({
-            title: titleInput.value.trim(),
-            content: editor.getHTML().trim(),
-            noteId: currentNoteId
-          }));
+  try {
+    editor = new window.TiptapEditor.Editor({
+      element: editorElement,
+      extensions: [
+        window.TiptapStarterKit.StarterKit,
+      ],
+      content: '<p>Start writing your note...</p>',
+      editorProps: {
+        attributes: {
+          style: 'min-height: 300px; padding: 16px; border: 1px solid #ddd; border-radius: 4px; outline: none;'
         }
-      }, 2000);
-    },
-    onSelectionUpdate: () => {
-      UIComponents.updateToolbarState();
-    },
-    onCreate: ({ editor }) => {
-      console.log('Editor created successfully');
-      UIComponents.updateToolbarState();
-    },
-    onDestroy: () => {
-      console.log('Editor destroyed');
-    }
-  });
+      },
+      onUpdate: ({ editor }) => {
+        clearTimeout(timeoutId);
+        updateAutoSaveStatus('Typing...');
 
-  // Add some basic CSS for the editor content
-  if (!document.getElementById('editor-styles')) {
-    const editorStyles = document.createElement('style');
-    editorStyles.id = 'editor-styles';
-    editorStyles.textContent = `
-      .tiptap-editor {
-        outline: none;
+        timeoutId = setTimeout(() => {
+          if (isOnline && (titleInput.value.trim() || (editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>'))) {
+            updateAutoSaveStatus('Saving...');
+            saveNote();
+          } else if (!isOnline) {
+            updateAutoSaveStatus('Offline');
+            localStorage.setItem('unsaved_content', JSON.stringify({
+              title: titleInput.value.trim(),
+              content: editor.getHTML().trim(),
+              noteId: currentNoteId,
+              timestamp: new Date().toISOString()
+            }));
+          }
+        }, 2000);
       }
-      .tiptap-editor h1 {
-        font-size: 1.5em;
-        font-weight: bold;
-        margin: 0.5em 0;
-      }
-      .tiptap-editor h2 {
-        font-size: 1.3em;
-        font-weight: bold;
-        margin: 0.5em 0;
-      }
-      .tiptap-editor p {
-        margin: 0.5em 0;
-      }
-      .tiptap-editor ul, .tiptap-editor ol {
-        padding-left: 1.5em;
-        margin: 0.5em 0;
-      }
-      .tiptap-editor blockquote {
-        border-left: 3px solid #ccc;
-        padding-left: 1em;
-        margin: 0.5em 0;
-        font-style: italic;
-      }
-      .tiptap-editor pre {
-        background: #f5f5f5;
-        padding: 1em;
-        border-radius: 4px;
-        overflow-x: auto;
-      }
-      .tiptap-editor code {
-        background: #f5f5f5;
-        padding: 0.2em 0.4em;
-        border-radius: 3px;
-        font-family: monospace;
-      }
-      .tiptap-editor strong {
-        font-weight: bold;
-      }
-      .tiptap-editor em {
-        font-style: italic;
-      }
-      .tiptap-editor u {
-        text-decoration: underline;
-      }
-      .tiptap-editor s {
-        text-decoration: line-through;
-      }
-    `;
-    document.head.appendChild(editorStyles);
+    });
+
+    console.log('Tiptap editor initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Tiptap editor:', error);
+    showAlert('Editor failed to load. Please refresh the page.', 'error');
   }
 }
 
-// Enhanced save function with better error handling
+// Save note function - works with your Flask backend
 function saveNote() {
   const title = titleInput.value.trim();
   const content = editor ? editor.getHTML().trim() : '';
@@ -717,25 +1009,36 @@ function saveNote() {
   }
 
   const payload = { title, content };
-  const method = currentNoteId ? "PUT" : "POST";
-  const url = currentNoteId
-    ? `/user/${sessionStorage.getItem('user')}/notes/${currentNoteId}`
-    : `/save_note`;
+  if (currentNoteId) {
+    payload.note_id = currentNoteId;
+  }
 
-  fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
+  console.log('Saving note:', payload); // Debug log
+
+  fetch('/save_note', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
     credentials: 'include',
     body: JSON.stringify(payload),
   })
     .then(res => {
+      console.log('Response status:', res.status); // Debug log
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
       return res.json();
     })
     .then(data => {
-      currentNoteId = data.note_id;
+      console.log('Save response:', data); // Debug log
+
+      // Your backend returns note_id in the response
+      if (data.note_id) {
+        currentNoteId = data.note_id;
+      }
+
       updateAutoSaveStatus('Saved');
       showAlert(data.message || "Note saved successfully.", 'success');
       fetchNotes();
@@ -744,8 +1047,9 @@ function saveNote() {
     .catch(err => {
       console.error("Save failed:", err);
       updateAutoSaveStatus('Error');
-      showAlert("Error saving note. Please try again.", 'error');
+      showAlert(`Error saving note: ${err.message}. Please try again.`, 'error');
 
+      // Save to localStorage as backup
       localStorage.setItem('unsaved_content', JSON.stringify({
         title,
         content,
@@ -755,7 +1059,172 @@ function saveNote() {
     });
 }
 
-// Enhanced delete function with UI modal
+// Load note function
+function loadNote(note) {
+  console.log('Loading note:', note); // Debug log
+  currentNoteId = note.id;
+  titleInput.value = note.title;
+  if (editor) {
+    editor.commands.setContent(note.content);
+  }
+  showAlert(`Opened: ${note.title}`, 'info');
+
+  // Debug: verify currentNoteId is set
+  console.log('Current note ID set to:', currentNoteId);
+}
+
+// Fetch notes function - works with your Flask /api/notes endpoint
+function fetchNotes() {
+  if (!isOnline) {
+    showAlert("Cannot fetch notes while offline.", 'warning');
+    return;
+  }
+
+  fetch("/api/notes", { credentials: "include" })
+    .then(res => {
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => {
+      console.log('Fetched notes:', data); // Debug log
+      notesList.innerHTML = "";
+
+      if (!data.notes || data.notes.length === 0) {
+        notesList.innerHTML = `
+          <div style="text-align: center; color: #666; padding: 40px;">
+            <h3 style="margin-bottom: 8px;">No notes yet</h3>
+            <p>Create your first note to get started!</p>
+          </div>
+        `;
+        return;
+      }
+
+      data.notes.forEach(note => {
+        const div = document.createElement("div");
+        div.style.cssText = `
+          cursor: pointer;
+          padding: 16px;
+          border: 1px solid #e1e5e9;
+          margin-bottom: 12px;
+          border-radius: 8px;
+          transition: all 0.2s;
+          background: white;
+          ${currentNoteId === note.id ? 'border-color: #007bff; background: #f8f9ff;' : ''}
+        `;
+
+        // Strip HTML tags for preview
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = note.content;
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        const previewContent = textContent.length > 150
+          ? textContent.substring(0, 150) + '...'
+          : textContent;
+
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <h3 style="margin: 0; color: #333; font-size: 16px;">${note.title}</h3>
+            <button class="delete-btn" data-id="${note.id}" style="
+              background: #f8f9fa;
+              color: #6c757d;
+              border: 1px solid #dee2e6;
+              padding: 4px 8px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 12px;
+              transition: all 0.2s;
+            ">Delete</button>
+          </div>
+          <small style="color: #6c757d; font-size: 12px;">
+            Last updated: ${new Date(note.updated_at).toLocaleString()}
+          </small>
+          <div class="preview" style="
+            margin: 12px 0 0 0;
+            color: #495057;
+            font-size: 14px;
+            line-height: 1.4;
+          ">${previewContent}</div>
+        `;
+        div.dataset.noteId = note.id;
+
+        // Hover effects
+        div.addEventListener("mouseenter", () => {
+          if (currentNoteId !== note.id) {
+            div.style.borderColor = "#007bff";
+            div.style.boxShadow = "0 2px 8px rgba(0,123,255,0.1)";
+          }
+        });
+
+        div.addEventListener("mouseleave", () => {
+          if (currentNoteId !== note.id) {
+            div.style.borderColor = "#e1e5e9";
+            div.style.boxShadow = "none";
+          }
+        });
+
+        div.addEventListener("click", (e) => {
+          if (e.target.classList.contains("delete-btn")) return;
+
+          const hasUnsavedChanges = titleInput.value.trim() !== '' ||
+                                  (editor && editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>');
+
+          if (hasUnsavedChanges && currentNoteId !== note.id) {
+            UIComponents.createModal(
+              'Unsaved Changes',
+              'You have unsaved changes. Do you want to continue without saving?',
+              [
+                {
+                  text: 'Cancel',
+                  handler: () => {}
+                },
+                {
+                  text: 'Continue',
+                  primary: true,
+                  handler: () => {
+                    loadNote(note);
+                  }
+                }
+              ]
+            );
+            return;
+          }
+
+          loadNote(note);
+        });
+
+        const deleteBtn = div.querySelector(".delete-btn");
+        deleteBtn.addEventListener("mouseenter", () => {
+          deleteBtn.style.background = "#dc3545";
+          deleteBtn.style.color = "white";
+          deleteBtn.style.borderColor = "#dc3545";
+        });
+
+        deleteBtn.addEventListener("mouseleave", () => {
+          deleteBtn.style.background = "#f8f9fa";
+          deleteBtn.style.color = "#6c757d";
+          deleteBtn.style.borderColor = "#dee2e6";
+        });
+
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteNote(note.id);
+        });
+
+        notesList.appendChild(div);
+      });
+    })
+    .catch(err => {
+      console.error("Failed to fetch notes:", err);
+      showAlert("Error loading notes. Please refresh the page.", 'error');
+    });
+}
+
+// Delete note function - works with your Flask /delete_note/<id> endpoint
 function deleteNote(noteId) {
   UIComponents.createModal(
     'Delete Note',
@@ -776,6 +1245,7 @@ function deleteNote(noteId) {
 
           showLoading(true);
 
+          // Use your backend endpoint
           fetch(`/delete_note/${noteId}`, {
             method: 'DELETE',
             credentials: 'include'
@@ -811,153 +1281,6 @@ function deleteNote(noteId) {
       }
     ]
   );
-}
-
-// Enhanced fetch notes
-function fetchNotes() {
-  if (!isOnline) {
-    showAlert("Cannot fetch notes while offline.", 'warning');
-    return;
-  }
-
-  fetch("/api/notes", { credentials: "include" })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then(data => {
-      notesList.innerHTML = "";
-
-      if (!data.notes || data.notes.length === 0) {
-        notesList.innerHTML = `
-          <div style="text-align: center; color: #666; padding: 40px;">
-            <h3 style="margin-bottom: 8px;">No notes yet</h3>
-            <p>Create your first note to get started!</p>
-          </div>
-        `;
-        return;
-      }
-
-      data.notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-        .forEach(note => {
-          const div = document.createElement("div");
-          div.style.cssText = `
-            cursor: pointer;
-            padding: 16px;
-            border: 1px solid #e1e5e9;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            transition: all 0.2s;
-            background: white;
-          `;
-
-          const previewContent = note.content.length > 150
-            ? note.content.substring(0, 150) + '...'
-            : note.content;
-
-          div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-              <h3 style="margin: 0; color: #333; font-size: 16px;">${note.title}</h3>
-              <button class="delete-btn" data-id="${note.id}" style="
-                background: #f8f9fa;
-                color: #6c757d;
-                border: 1px solid #dee2e6;
-                padding: 4px 8px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 12px;
-                transition: all 0.2s;
-              ">Delete</button>
-            </div>
-            <small style="color: #6c757d; font-size: 12px;">
-              Last updated: ${new Date(note.updated_at).toLocaleString()}
-            </small>
-            <div class="preview" style="
-              margin: 12px 0 0 0;
-              color: #495057;
-              font-size: 14px;
-              line-height: 1.4;
-            ">${previewContent}</div>
-          `;
-          div.dataset.noteId = note.id;
-
-          // Hover effects
-          div.addEventListener("mouseenter", () => {
-            div.style.borderColor = "#007bff";
-            div.style.boxShadow = "0 2px 8px rgba(0,123,255,0.1)";
-          });
-
-          div.addEventListener("mouseleave", () => {
-            div.style.borderColor = "#e1e5e9";
-            div.style.boxShadow = "none";
-          });
-
-          div.addEventListener("click", (e) => {
-            if (e.target.classList.contains("delete-btn")) return;
-
-            const hasUnsavedChanges = titleInput.value.trim() !== '' ||
-                                    (editor && editor.getHTML().trim() !== '' && editor.getHTML().trim() !== '<p></p>' && editor.getHTML().trim() !== '<p>Start writing your note...</p>');
-
-            if (hasUnsavedChanges && currentNoteId !== note.id) {
-              UIComponents.createModal(
-                'Unsaved Changes',
-                'You have unsaved changes. Do you want to continue without saving?',
-                [
-                  {
-                    text: 'Cancel',
-                    handler: () => {}
-                  },
-                  {
-                    text: 'Continue',
-                    primary: true,
-                    handler: () => {
-                      loadNote(note);
-                    }
-                  }
-                ]
-              );
-              return;
-            }
-
-            loadNote(note);
-          });
-
-                    const deleteBtn = div.querySelector(".delete-btn");
-          deleteBtn.addEventListener("mouseenter", () => {
-            deleteBtn.style.background = "#dc3545";
-            deleteBtn.style.color = "white";
-            deleteBtn.style.borderColor = "#dc3545";
-          });
-
-          deleteBtn.addEventListener("mouseleave", () => {
-            deleteBtn.style.background = "#f8f9fa";
-            deleteBtn.style.color = "#6c757d";
-            deleteBtn.style.borderColor = "#dee2e6";
-          });
-
-          deleteBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            deleteNote(note.id);
-          });
-
-          notesList.appendChild(div);
-        });
-    })
-    .catch(err => {
-      console.error("Failed to fetch notes:", err);
-      showAlert("Error loading notes. Please refresh the page.", 'error');
-    });
-}
-
-function loadNote(note) {
-  currentNoteId = note.id;
-  titleInput.value = note.title;
-  if (editor) {
-    editor.commands.setContent(note.content);
-  }
-  showAlert(`Opened: ${note.title}`, 'info');
 }
 
 // Manual Save with UI feedback
@@ -1007,7 +1330,7 @@ newNoteBtn?.addEventListener("click", () => {
   showAlert("Ready to write a new note.", 'info');
 });
 
-// Fixed logout button
+// Fixed logout button - works with your Flask /logout endpoint
 logoutBtn?.addEventListener('click', () => {
   UIComponents.createModal(
     'Confirm Logout',
@@ -1025,9 +1348,9 @@ logoutBtn?.addEventListener('click', () => {
           localStorage.clear();
           showLoading(true);
 
-          // Make logout request to server
+          // Use your backend logout endpoint (GET method)
           fetch('/logout', {
-            method: 'POST',
+            method: 'GET',
             credentials: 'include'
           })
           .then(() => {
@@ -1062,7 +1385,8 @@ titleInput?.addEventListener('input', () => {
       localStorage.setItem('unsaved_content', JSON.stringify({
         title: titleInput.value.trim(),
         content: editor ? editor.getHTML().trim() : '',
-        noteId: currentNoteId
+        noteId: currentNoteId,
+        timestamp: new Date().toISOString()
       }));
     }
   }, 2000);
@@ -1193,7 +1517,5 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 console.log('Notes app initialized successfully');
-
-
 
 </script>
