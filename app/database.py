@@ -47,7 +47,7 @@ class Note(BaseModel):
     version = IntegerField(default=1)
 
     def save(self, *args, **kwargs):
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(eastern)
         return super().save(*args, **kwargs)
 
     class Meta:
