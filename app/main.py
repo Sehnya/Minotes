@@ -272,7 +272,8 @@ def api_notes():
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    notes = Note.select().where(Note.user == user).order_by(Note.updated_at.desc())
+    notes = Note.select().where((Note.user == user) & (Note.is_active == True)).order_by(Note.updated_at.desc())
+
 
     return jsonify({
         "notes": [
@@ -289,7 +290,7 @@ def api_notes():
 
 
 @app.route("/delete_note/<int:note_id>", methods=["DELETE"])
-def delete_note(note_id):
+def delete_note_by_session(note_id):  # ✅ new unique function name
     ip = request.remote_addr
     username = session.get("user")
 
@@ -300,13 +301,13 @@ def delete_note(note_id):
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    # Find the note belonging to this user
     note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
     if not note:
         return jsonify({"message": "Note not found"}), 404
 
     note.delete_instance()
     return jsonify({"message": "Note deleted successfully"}), 200
+
 
 
 logging.basicConfig(
