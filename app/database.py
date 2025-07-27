@@ -1,10 +1,10 @@
 
 
 import os
-from _pydatetime import timezone
+from datetime import datetime, timezone
 
 from peewee import *
-from peewee import utcnow
+
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(

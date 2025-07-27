@@ -46,10 +46,10 @@ let timeoutId;
 let currentNoteId = null;
 
 const textarea = document.getElementById('content');
+const titleInput = document.getElementById('title');
 const saveBtn = document.getElementById('save-btn');
 const notesList = document.getElementById('notes-list-container');
 const logoutBtn = document.getElementById('logout-btn');
-const input = document.getElementById('title');
 
 function showAlert(message) {
   const alertBox = document.createElement('div');
@@ -66,10 +66,10 @@ logoutBtn.addEventListener('click', () => {
 });
 
 function saveNote() {
-  const title = input.value.trim();
   const content = textarea.value.trim();
+  const title = titleInput.value.trim();
 
-  if (!title || !content) return;
+  if (!content || !title) return;
 
   const payload = { title, content };
 
@@ -79,54 +79,51 @@ function saveNote() {
     credentials: "include",
     body: JSON.stringify(payload)
   })
-    .then(res => res.json())
-    .then(data => {
-      showAlert(data.message || "Note saved.");
-      currentNoteId = data.note_id;
-      fetchNotes();
-    });
+  .then(res => res.json())
+  .then(data => {
+    showAlert(data.message || "Note saved.");
+    currentNoteId = data.note_id;
+    fetchNotes();
+  });
 }
 
+// ⏱ Autosave 5 seconds after typing stops
 textarea.addEventListener("input", () => {
   clearTimeout(timeoutId);
   timeoutId = setTimeout(saveNote, 5000);
 });
+titleInput.addEventListener("input", () => {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(saveNote, 5000);
+});
 
+// 🖱 Save manually
 saveBtn.addEventListener("click", saveNote);
+fetchNotes()
 
 function fetchNotes() {
   fetch("/api/notes", { credentials: "include" })
-    .then(res => {
-      console.log("Status:", res.status);
-      return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
-      console.log("Fetched notes:", data);
+      notesList.innerHTML = ""; // clear previous notes
 
-      notesList.innerHTML = "";
       data.notes
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
         .forEach(note => {
           const div = document.createElement("div");
+
           div.innerHTML = `
             <h3>${note.title}</h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
             <p>${note.content}</p>
-            <button class="delete-btn" data-id="${note.id}">Delete Note</button>
             <hr>
           `;
+
           notesList.appendChild(div);
         });
-
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const noteId = btn.getAttribute("data-id");
-          deleteNote(noteId);
-        });
-      });
     })
     .catch(err => {
-      console.error("Error fetching notes:", err);
+      console.error("Failed to fetch notes:", err);
     });
 }
 </script>
