@@ -1,10 +1,13 @@
-from wtforms.form import Form
-from wtforms import StringField, SubmitField, PasswordField
-from wtforms.validators import DataRequired, Email, ValidationError
-from database import User
 import logging
 
+from wtforms import StringField, SubmitField, PasswordField
+from wtforms.form import Form
+from wtforms.validators import DataRequired, Email, ValidationError
+
+from database import User
+
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class MyForm(Form):
@@ -13,15 +16,13 @@ class MyForm(Form):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Sign Up')
 
-    @staticmethod
-    def validate_username(field):
+    def validate_username(self, field):
         logger.info(f"Checking if username '{field.data}' already exists...")
         if User.get_or_none(User.username == field.data):
             logger.warning(f"Username '{field.data}' is already taken.")
             raise ValidationError('That username is taken. Please choose a different one.')
 
-    @staticmethod
-    def validate_email(field):
+    def validate_email(self, field):
         logger.info(f"Checking if email '{field.data}' already exists...")
         if User.get_or_none(User.email == field.data):
             logger.warning(f"Email '{field.data}' is already taken.")

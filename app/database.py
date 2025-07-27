@@ -1,9 +1,8 @@
 
 
-from peewee import *
 import os
 
-
+from peewee import *
 
 # Use PostgresqlDatabase for cloud deployment
 db = PostgresqlDatabase(
@@ -42,9 +41,6 @@ class Note(BaseModel):
     class Meta:
         table_name = 'notes'
 
-
-    class Meta:
-        table_name = 'notes'
 
 class UserSession(BaseModel):
     user = ForeignKeyField(User, backref="sessions")
