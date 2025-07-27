@@ -53,6 +53,7 @@ const deleteBtn = document.getElementById('delete-btn');
 
 
 
+
 function showAlert(message) {
   const alertBox = document.createElement('div');
   alertBox.textContent = message;
@@ -107,6 +108,7 @@ function fetchNotes() {
 
           div.innerHTML = `
             <h3>${note.title}</h3>
+            <h3></h3>
             <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
             <p>${note.content}</p>
             <button id="delete-btn" style="justify-self: center;" ">Delete Note</button>

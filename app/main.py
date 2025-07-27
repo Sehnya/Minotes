@@ -177,20 +177,26 @@ def update_note(username,note_id):
 
     return jsonify({ "message": "Note updated"}), 200
 
+from flask import request
+
 @app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(username, note_id):
-
+    ip = request.remote_addr
     user = User.get_or_none(User.username == username)
     if not user:
+        logger.warning(f"[{ip}] Failed delete attempt - User '{username}' not found.")
         return jsonify({"error": "User not found"}), 404
 
     note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
     if not note:
+        logger.warning(f"[{ip}] Note {note_id} not found for user '{username}'.")
         return jsonify({"error": "Note not found"}), 404
 
     note.delete_instance()
-    logging.info(f"Note {note_id} deleted for user {username}")
+    logger.info(f"[{ip}] User '{username}' deleted note {note_id}.")
+
     return jsonify({"message": "Note deleted successfully", "note_id": note_id}), 200
+
 
 
 @app.route("/save_note", methods=["POST"])
@@ -235,7 +241,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",  # Timestamp and level
     handlers=[
-        logging.FileHandler("logs/app.log"),           # Save to file
+        logging.FileHandler("./logs/app.log"),           # Save to file
         logging.StreamHandler()                        # Output to console (for Render logs)
     ]
 )
