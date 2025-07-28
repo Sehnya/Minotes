@@ -678,7 +678,7 @@
                         Notes
                     </div>
                     <div class="user-info" v-if="user">
-                        {{ user.username }}
+                        {% raw %}{{ user.username }}{% endraw %}
                     </div>
                 </div>
 
@@ -692,7 +692,7 @@
                 <div class="notes-section">
                     <div class="notes-header">
                         <div class="notes-title">Recent</div>
-                        <div class="notes-count">{{ notes.length }}</div>
+                        <div class="notes-count">{% raw %}{{ notes.length }}{% endraw %}</div>
                     </div>
 
                     <div class="notes-list">
@@ -715,9 +715,9 @@
                                 :class="['note-item', { active: currentNote && currentNote.id === note.id }]"
                                 @click="loadNote(note)"
                             >
-                                <div class="note-title">{{ note.title || 'Untitled' }}</div>
-                                <div class="note-preview">{{ getPreview(note.content) }}</div>
-                                <div class="note-date">{{ formatDate(note.updated_at) }}</div>
+                                <div class="note-title">{% raw %}{{ note.title || 'Untitled' }}{% endraw %}</div>
+                                <div class="note-preview">{% raw %}{{ getPreview(note.content) }}{% endraw %}</div>
+                                <div class="note-date">{% raw %}{{ formatDate(note.updated_at) }}{% endraw %}</div>
                                 <button
                                     class="note-delete"
                                     @click.stop="deleteNote(note.id)"
@@ -736,7 +736,7 @@
                 <!-- Top Bar -->
                 <div class="top-bar">
                     <div class="editor-info">
-                        <div class="word-count">{{ wordCount }} words</div>
+                        <div class="word-count">{% raw %}{{ wordCount }}{% endraw %} words</div>
                         <div class="save-status">
                             <div :class="['status-dot', saveStatus]"></div>
                             <span v-if="saveStatus === 'saved'">Saved</span>
@@ -747,7 +747,7 @@
                     </div>
                     <div class="top-bar-actions">
                         <button @click="saveNote" class="btn btn-primary" :disabled="loading || !hasChanges">
-                            {{ saving ? 'Saving...' : 'Save' }}
+                            {% raw %}{{ saving ? 'Saving...' : 'Save' }}{% endraw %}
                         </button>
                         <button @click="logout" class="btn btn-danger">
                             Logout
@@ -843,7 +843,7 @@
 
         <!-- Alert Component -->
         <div v-if="alert.show" :class="['alert', `alert-${alert.type}`]">
-            {{ alert.message }}
+            {% raw %}{{ alert.message }}{% endraw %}
         </div>
     </div>
 
@@ -987,6 +987,7 @@
                         }
                     } catch (error) {
                         console.error('Failed to load notes:', error);
+
                         this.showAlert('Failed to load notes', 'error');
                     } finally {
                         this.loading = false;
@@ -997,7 +998,6 @@
                     if (this.hasChanges) {
                         if (!confirm('You have unsaved changes. Continue without saving?')) {
                             return;
-
                         }
                     }
 
