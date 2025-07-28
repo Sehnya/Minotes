@@ -8,17 +8,15 @@ from flask_cors import CORS
 from database import User, Note, db
 from forms import MyForm
 
-# import flask class, instance of class will be the app
 app = Flask(__name__)
 app.secret_key = "Elija11052017!"
 app.permanent_session_lifetime = timedelta(days=7)
 
-CORS(app, supports_credentials=True, origins='')
+CORS(app, supports_credentials=True, origins='*')
 
 logger = logging.getLogger(__name__)
 
 
-# instance of class; __name__ helps Flask locate resources like templates and static files.
 @app.before_request
 def _db_connect():
     if db.is_closed():
@@ -32,14 +30,11 @@ def _db_close(exc):
 
 
 @app.route('/', methods=['GET'])
-# route() decorator tells flask what URL should trigger our func
 def index():
     if "user" in session:
-        redirect(url_for("home"))  # Already logged in --> go to dash
-    return render_template("index.html")  # Not logged in --> landing page
+        return redirect(url_for("dashboard"))
+    return render_template("index.html")
 
-
-from forms import MyForm  # Make sure this import exists
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -60,7 +55,6 @@ def signup():
             flash("Something went wrong. Please try again.")
 
     return render_template('signup.html', form=form)
-
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -96,9 +90,10 @@ def dashboard():
         return redirect(url_for("login"))
     user = User.get_or_none(User.username == session["user"])
     notes = Note.select().where(Note.user == user)
-    return render_template('dashboard.html', user=user, notes=notes)
+    return render_template('vue_dashboard.html', user=user, notes=notes)
 
 
+# API Routes for Vue Frontend
 @app.route("/api/session")
 def api_session():
     username = session.get("user")
@@ -117,165 +112,7 @@ def api_session():
     })
 
 
-@app.route('/home', methods=['GET', 'POST'])
-def home():
-    if "user" not in session:
-        flash('Please log in to continue.')
-        return redirect(url_for('login'))
-
-    user = User.get_or_none(User.username == session["user"])
-
-    if request.method == "POST":
-        # Example: Create a note directly from dashboard
-        title = request.form.get("title")
-        content = request.form.get("content")
-        if title and content:
-            Note.create(title=title, content=content, user=user)
-            flash("Note created!")
-        return redirect(url_for("home"))
-
-    notes = Note.select().where(Note.user == user)
-    return render_template("dashboard.html", user=user, notes=notes)
-
-
-# returns what we want displayed in the browser; content type = HTML
-@app.route('/user/<username>')
-def user(username):
-    user = User.get_or_none(User.username == username)
-    if user is None:
-        abort(404, description="User not found")
-
-    else:
-        return jsonify({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email
-        })
-
-
-# Retrieve all notes for a user
-@app.route('/user/<username>/notes', methods=['POST'])
-def create_note(username):
-    user = User.get_or_none(User.username == username)
-    if user is None:
-        abort(404, description="User not found")
-
-    data = request.get_json()
-    title = data.get("title")
-    content = data.get("content")
-
-    if not title or not content:
-        abort(400, description="Title and content required")
-
-    note = Note.create(title=title, content=content, user=user)
-    return jsonify({"id": note.id, "message": "Note created"}), 201
-
-
-@app.route('/user/<username>/notes/<int:note_id>', methods=['PUT'])
-def update_note(username, note_id):
-    user = User.get_or_none(User.username == username)
-    if not user:
-        abort(404, description="User not found")
-
-    old_note = Note.get_or_none((Note.id == note_id) & (Note.user == user) & (Note.is_active == True))
-    if not old_note:
-        abort(404, description="Note not found")
-
-    data = request.get_json()
-    title = data.get("title", old_note.title)
-    content = data.get("content", old_note.content)
-
-    # Deactivate current note
-    old_note.is_active = False
-    old_note.save()
-
-    # Create new version
-    new_note = Note.create(
-        title=title,
-        content=content,
-        user=user,
-        parent=old_note,
-        version=old_note.version + 1
-    )
-
-    # Keep only 5 most recent versions
-    old_versions = (Note.select()
-                    .where((Note.parent == old_note.parent or Note.parent == old_note)
-                           & (Note.user == user))
-                    .order_by(Note.updated_at.desc()))
-
-    for extra in list(old_versions)[5:]:
-        extra.delete_instance()
-
-    return jsonify({
-        "message": "Note updated",
-        "note_id": new_note.id,
-        "version": new_note.version
-    }), 200
-
-
-
-@app.route('/user/<username>/notes/<int:note_id>', methods=['DELETE'])
-def delete_note(username, note_id):
-    ip = request.remote_addr
-    user = User.get_or_none(User.username == username)
-    if not user:
-        logger.warning(f"[{ip}] Failed delete attempt - User '{username}' not found.")
-        return jsonify({"error": "User not found"}), 404
-
-    note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
-    if not note:
-        logger.warning(f"[{ip}] Note {note_id} not found for user '{username}'.")
-        return jsonify({"error": "Note not found"}), 404
-
-    note.delete_instance()
-    logger.info(f"[{ip}] User '{username}' deleted note {note_id}.")
-
-    return jsonify({"message": "Note deleted successfully", "note_id": note_id}), 200
-
-
-@app.route("/save_note", methods=["POST"])
-def save_note():
-    if "user" not in session:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    user = User.get_or_none(User.username == session["user"])
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    data = request.get_json()
-    title = data.get("title", "").strip()
-    content = data.get("content", "").strip()
-    note_id = data.get("note_id")  # Add this line
-
-    if not title or not content:
-        return jsonify({"message": "Title and content required"}), 400
-
-    # Update by ID if provided, otherwise check by title
-    if note_id:
-        existing_note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
-    else:
-        existing_note = Note.get_or_none((Note.title == title) & (Note.user == user))
-
-    if existing_note:
-        existing_note.title = title  # Allow title updates
-        existing_note.content = content
-        existing_note.updated_at = datetime.now(timezone.utc)
-        existing_note.save()
-        return jsonify({
-            "message": "Note updated successfully.",
-            "note_id": existing_note.id
-        }), 200
-    else:
-        new_note = Note.create(title=title, content=content, user=user)
-        return jsonify({
-            "message": "Note saved successfully.",
-            "note_id": new_note.id
-        }), 200
-
-
-
-@app.route("/api/notes")
+@app.route("/api/notes", methods=['GET'])
 def api_notes():
     if "user" not in session:
         return jsonify({"message": "Unauthorized"}), 401
@@ -285,7 +122,6 @@ def api_notes():
         return jsonify({"message": "User not found"}), 404
 
     notes = Note.select().where((Note.user == user) & (Note.is_active == True)).order_by(Note.updated_at.desc())
-
 
     return jsonify({
         "notes": [
@@ -301,15 +137,97 @@ def api_notes():
     })
 
 
-@app.route("/delete_note/<int:note_id>", methods=["DELETE"])
-def delete_note_by_session(note_id):  # ✅ new unique function name
-    ip = request.remote_addr
-    username = session.get("user")
-
-    if not username:
+@app.route("/api/notes", methods=['POST'])
+def api_create_note():
+    if "user" not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
-    user = User.get_or_none(User.username == username)
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = request.get_json()
+    title = data.get("title", "Untitled Note").strip()
+    content = data.get("content", "").strip()
+
+    new_note = Note.create(title=title, content=content, user=user)
+
+    return jsonify({
+        "message": "Note created successfully",
+        "note": {
+            "id": new_note.id,
+            "title": new_note.title,
+            "content": new_note.content,
+            "created_at": new_note.created_at.isoformat(),
+            "updated_at": new_note.updated_at.isoformat()
+        }
+    }), 201
+
+
+@app.route("/api/notes/<int:note_id>", methods=['GET'])
+def api_get_note(note_id):
+    if "user" not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    note = Note.get_or_none((Note.id == note_id) & (Note.user == user) & (Note.is_active == True))
+    if not note:
+        return jsonify({"message": "Note not found"}), 404
+
+    return jsonify({
+        "note": {
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "created_at": note.created_at.isoformat(),
+            "updated_at": note.updated_at.isoformat()
+        }
+    })
+
+
+@app.route("/api/notes/<int:note_id>", methods=['PUT'])
+def api_update_note(note_id):
+    if "user" not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    note = Note.get_or_none((Note.id == note_id) & (Note.user == user) & (Note.is_active == True))
+    if not note:
+        return jsonify({"message": "Note not found"}), 404
+
+    data = request.get_json()
+    title = data.get("title", note.title).strip()
+    content = data.get("content", note.content).strip()
+
+    note.title = title
+    note.content = content
+    note.updated_at = datetime.now(timezone.utc)
+    note.save()
+
+    return jsonify({
+        "message": "Note updated successfully",
+        "note": {
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "created_at": note.created_at.isoformat(),
+            "updated_at": note.updated_at.isoformat()
+        }
+    })
+
+
+@app.route("/api/notes/<int:note_id>", methods=['DELETE'])
+def api_delete_note(note_id):
+    if "user" not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user = User.get_or_none(User.username == session["user"])
     if not user:
         return jsonify({"message": "User not found"}), 404
 
@@ -321,12 +239,51 @@ def delete_note_by_session(note_id):  # ✅ new unique function name
     return jsonify({"message": "Note deleted successfully"}), 200
 
 
+# Keep your existing routes for backward compatibility
+@app.route("/save_note", methods=["POST"])
+def save_note():
+    if "user" not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = request.get_json()
+    title = data.get("title", "").strip()
+    content = data.get("content", "").strip()
+    note_id = data.get("note_id")
+
+    if not title or not content:
+        return jsonify({"message": "Title and content required"}), 400
+
+    if note_id:
+        existing_note = Note.get_or_none((Note.id == note_id) & (Note.user == user))
+    else:
+        existing_note = Note.get_or_none((Note.title == title) & (Note.user == user))
+
+    if existing_note:
+        existing_note.title = title
+        existing_note.content = content
+        existing_note.updated_at = datetime.now(timezone.utc)
+        existing_note.save()
+        return jsonify({
+            "message": "Note updated successfully.",
+            "note_id": existing_note.id
+        }), 200
+    else:
+        new_note = Note.create(title=title, content=content, user=user)
+        return jsonify({
+            "message": "Note saved successfully.",
+            "note_id": new_note.id
+        }), 200
+
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",  # Timestamp and level
-    handlers=[  # Save to file
-        logging.StreamHandler()  # Output to console (for Render logs)
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler()
     ]
 )
 
