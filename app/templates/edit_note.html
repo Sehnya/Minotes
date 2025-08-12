@@ -3,243 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Note</title>
+    <title>MiNotes • Edit Note</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/@tiptap/core@2.1.13/dist/index.umd.js"></script>
     <script src="https://unpkg.com/@tiptap/starter-kit@2.1.13/dist/index.umd.js"></script>
-    <link rel="stylesheet" href="https://use.typekit.net/obl2cdx.css">
-    <style>
-        body {
-            font-family: ff-providence-sans-web-pro, sans-serif;
-            background: #FEFCF8;
-            color: #2C2825;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: ff-providence-sans-web-pro, sans-serif;
-        }
-        .btn-primary {
-            background: #9CAF88;
-            color: white;
-        }
-        .btn-secondary {
-            background: #F5E6D3;
-            color: #2C2825;
-        }
-        .title-input {
-            width: 100%;
-            padding: 15px;
-            font-size: 24px;
-            border: 2px solid #F5E6D3;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-family: ff-providence-sans-web-pro, sans-serif;
-        }
-        .editor {
-            border: 2px solid #F5E6D3;
-            border-radius: 10px;
-            min-height: 300px;
-            padding: 20px;
-            background: white;
-        }
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .toolbar-btn {
-            padding: 8px 12px;
-            border: 1px solid #F5E6D3;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .toolbar-btn.is-active {
-            background: #F5E6D3;
-        }
-        .status {
-            margin-top: 20px;
-            color: #9CAF88;
-            font-size: 14px;
-        }
-    </style>
+    <link rel="stylesheet" href="https://use.typekit.net/tmb0jpk.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='editor.css') }}">
 </head>
 <body>
-    <div id="app" class="container">
-        <div class="header">
-            <h1>Edit Note</h1>
-            <div>
-                <button @click="saveNote" class="btn btn-primary">Save</button>
-                <button @click="goBack" class="btn btn-secondary">Back</button>
+<div id="app" class="app-shell" data-username="{{ user.username if user else '' }}" data-note='{{ note|tojson }}'>
+    <header class="header">
+        <div class="brand">
+            <div class="brand-logo" aria-hidden="true"></div>
+            <div class="brand-title">MiNotes</div>
+        </div>
+        <div class="actions">
+            <div class="welcome">Editing as {% raw %}{{ username || '...' }}{% endraw %}</div>
+            <button class="btn btn-secondary" @click="goBack">Back</button>
+            <button class="btn btn-success" @click="saveNote(false)">Save</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="editor-wrap">
+            <input
+                type="text"
+                v-model="note.title"
+                class="title-input"
+                placeholder="Note title..."
+                @input="autoSave"
+            >
+
+            <div class="toolbar" v-if="editor">
+                <button
+                    @click="editor.chain().focus().toggleBold().run()"
+                    :class="['toolbar-btn', { 'is-active': editor.isActive('bold') }]"
+                >Bold</button>
+                <button
+                    @click="editor.chain().focus().toggleItalic().run()"
+                    :class="['toolbar-btn', { 'is-active': editor.isActive('italic') }]"
+                >Italic</button>
+                <button
+                    @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+                    :class="['toolbar-btn', { 'is-active': editor.isActive('heading', { level: 1 }) }]"
+                >H1</button>
+                <button
+                    @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+                    :class="['toolbar-btn', { 'is-active': editor.isActive('heading', { level: 2 }) }]"
+                >H2</button>
+                <button
+                    @click="editor.chain().focus().toggleBulletList().run()"
+                    :class="['toolbar-btn', { 'is-active': editor.isActive('bulletList') }]"
+                >Bullet List</button>
+                <button
+                    @click="editor.chain().focus().toggleOrderedList().run()"
+                    :class="['toolbar-btn', { 'is-active': editor.isActive('orderedList') }]"
+                >Numbered List</button>
+            </div>
+
+            <div class="editor" ref="editor"></div>
+            <div class="status">{% raw %}{{ status }}{% endraw %}</div>
+            <div class="footer-actions">
+                <button class="btn btn-secondary" @click="goBack">Back to Dashboard</button>
+                <button class="btn btn-success" @click="saveNote(false)">Save Now</button>
             </div>
         </div>
+    </main>
+</div>
 
-        <input
-            type="text"
-            v-model="note.title"
-            class="title-input"
-            placeholder="Note title..."
-            @input="autoSave"
-        >
+<script>
+    const { createApp } = Vue;
+    const { Editor } = TiptapEditor;
+    const { StarterKit } = TiptapStarterKit;
 
-        <div class="toolbar" v-if="editor">
-            <button
-                @click="editor.chain().focus().toggleBold().run()"
-                :class="['toolbar-btn', { 'is-active': editor.isActive('bold') }]"
-            >
-                Bold
-            </button>
-            <button
-                @click="editor.chain().focus().toggleItalic().run()"
-                :class="['toolbar-btn', { 'is-active': editor.isActive('italic') }]"
-            >
-                Italic
-            </button>
-            <button
-                @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-                :class="['toolbar-btn', { 'is-active': editor.isActive('heading', { level: 1 }) }]"
-            >
-                H1
-            </button>
-            <button
-                @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-                :class="['toolbar-btn', { 'is-active': editor.isActive('heading', { level: 2 }) }]"
-            >
-                H2
-            </button>
-            <button
-                @click="editor.chain().focus().toggleBulletList().run()"
-                :class="['toolbar-btn', { 'is-active': editor.isActive('bulletList') }]"
-            >
-                Bullet List
-            </button>
-            <button
-                @click="editor.chain().focus().toggleOrderedList().run()"
-                :class="['toolbar-btn', { 'is-active': editor.isActive('orderedList') }]"
-            >
-                Numbered List
-            </button>
-        </div>
-
-        <div class="editor" ref="editor"></div>
-
-        <div class="status">{% raw %}{{ status }}{% endraw %}</div>
-    </div>
-
-    <script>
-        const { createApp } = Vue;
-        const { Editor } = TiptapEditor;
-        const { StarterKit } = TiptapStarterKit;
-
-        createApp({
-            data() {
-                return {
-                    note: {{ note|tojson }},
-                    editor: null,
-                    status: 'Ready',
-                    saveTimeout: null
-                }
-            },
-
-            mounted() {
-                this.initEditor();
-            },
-
-            methods: {
-                initEditor() {
-                    this.editor = new Editor({
-                        element: this.$refs.editor,
-                        extensions: [
-                            StarterKit
-                        ],
-                        content: this.note.content,
-                        onUpdate: ({ editor }) => {
-                            this.note.content = editor.getHTML();
-                            this.autoSave();
-                        }
-                    });
-                },
-
-                autoSave() {
-                    if (this.saveTimeout) {
-                        clearTimeout(this.saveTimeout);
-                    }
-
-                    this.status = 'Typing...';
-
-                    this.saveTimeout = setTimeout(() => {
-                        this.saveNote(true);
-                    }, 2000);
-                },
-
-                async saveNote(isAutoSave = false) {
-                    this.status = 'Saving...';
-
-                    try {
-                        const response = await fetch(`/api/notes/${this.note.id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
-                            body: JSON.stringify({
-                                title: this.note.title,
-                                content: this.note.content
-                            })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.note = data.note;
-                            this.status = 'Saved';
-
-                            if (!isAutoSave) {
-                                alert('Note saved successfully!');
-                            }
-                        } else {
-                            this.status = 'Error saving';
-                            if (!isAutoSave) {
-                                alert('Failed to save note');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        this.status = 'Error saving';
-                        if (!isAutoSave) {
-                            alert('Failed to save note');
-                        }
-                    }
-                },
-
-                goBack() {
-                    window.location.href = '/dashboard';
-                }
-            },
-
-            beforeUnmount() {
-                if (this.editor) {
-                    this.editor.destroy();
-                }
+    createApp({
+        data() {
+            const root = document.getElementById('app');
+            return {
+                username: (root && root.dataset && root.dataset.username) ? root.dataset.username : null,
+                note: (() => { try { return root && root.dataset && root.dataset.note ? JSON.parse(root.dataset.note) : null; } catch(e){ return null; } })(),
+                editor: null,
+                status: 'Ready',
+                saveTimeout: null
             }
-        }).mount('#app');
-    </script>
+        },
+
+        mounted() {
+            this.initEditor();
+        },
+
+        methods: {
+            initEditor() {
+                this.editor = new Editor({
+                    element: this.$refs.editor,
+                    extensions: [ StarterKit ],
+                    content: this.note && this.note.content ? this.note.content : '<p></p>',
+                    onUpdate: ({ editor }) => {
+                        this.note.content = editor.getHTML();
+                        this.autoSave();
+                    }
+                });
+            },
+
+            autoSave() {
+                if (this.saveTimeout) {
+                    clearTimeout(this.saveTimeout);
+                }
+                this.status = 'Typing...';
+                this.saveTimeout = setTimeout(() => {
+                    this.saveNote(true);
+                }, 2000);
+            },
+
+            async saveNote(isAutoSave = false) {
+                this.status = 'Saving...';
+                try {
+                    const response = await fetch(`/api/notes/${this.note.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            title: this.note.title,
+                            content: this.note.content
+                        })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.note = data.note;
+                        this.status = 'Saved';
+                        if (!isAutoSave) {
+                            // toast-like feedback for save can be added later
+                        }
+                    } else {
+                        this.status = 'Error saving';
+                        if (!isAutoSave) alert('Failed to save note');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.status = 'Error saving';
+                    if (!isAutoSave) alert('Failed to save note');
+                }
+            },
+
+            goBack() {
+                window.location.href = '/dashboard';
+            }
+        },
+
+        beforeUnmount() {
+            if (this.editor) {
+                this.editor.destroy();
+            }
+        }
+    }).mount('#app');
+</script>
 </body>
 </html>
