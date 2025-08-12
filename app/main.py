@@ -7,8 +7,8 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect
 
-from database import User, Note, db
-from forms import MyForm
+from app.database import User, Note, db
+from app.forms import MyForm
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
