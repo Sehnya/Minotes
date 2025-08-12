@@ -1,0 +1,1 @@
+# MiNotes application package marker

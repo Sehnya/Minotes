@@ -4,5 +4,7 @@ peewee~=3.18.2
 waitress~=3.0.2
 psycopg2-binary
 WTForms~=3.2.1
+Flask-WTF~=1.2.2
 pytz~=2025.2
 email_validator
+pytest~=8.3.3

@@ -14,6 +14,7 @@
         </div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('signup') }}">
+                <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}" />
                 <label for="username">Username</label>
                 <input id="username" name="username" type="text" required />
 

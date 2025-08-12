@@ -4,13 +4,18 @@ from datetime import timedelta, datetime, timezone
 
 from flask import Flask, render_template, abort, redirect, url_for, flash, session, jsonify, request
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import CSRFProtect
 
-from database import User, Note, db
-from forms import MyForm
+from .database import User, Note, db
+from .forms import MyForm
 
 app = Flask(__name__)
-app.secret_key = "Elija11052017!"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.permanent_session_lifetime = timedelta(days=7)
+
+# Enable CSRF protection for form submissions.
+csrf = CSRFProtect(app)
 
 CORS(app, supports_credentials=True)
 
@@ -25,6 +30,9 @@ def _db_connect():
 
 @app.teardown_request
 def _db_close(exc):
+    # In testing mode with in-memory SQLite, avoid closing the DB to preserve data across requests
+    if os.environ.get("TESTING") == "1":
+        return
     if not db.is_closed():
         db.close()
 
@@ -45,9 +53,10 @@ def signup():
             User.create(
                 username=form.username.data,
                 email=form.email.data,
-                password=form.password.data
+                password_hash=generate_password_hash(form.password.data)
             )
             session["user"] = form.username.data
+            session.permanent = True
             flash("Signup successful!")
             return redirect(url_for("dashboard"))
         except Exception as e:
@@ -57,15 +66,16 @@ def signup():
     return render_template('signup.html', form=form)
 
 
+@csrf.exempt
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get("username")
         password = request.form.get("password")
 
-        user = User.get_or_none((User.username == username) & (User.password == password))
+        user = User.get_or_none(User.username == username)
 
-        if user and user.password == password:
+        if user and check_password_hash(user.password_hash, password):
             session["user"] = username
             session.permanent = True
             return redirect("dashboard")
@@ -103,12 +113,15 @@ def dashboard():
             'title': note.title,
             'content': note.content,
             'created_at': note.created_at.isoformat(),
-            'updated_at': note.updated_at.isoformat()
+            'updated_at': note.updated_at.isoformat(),
+            'version': note.version,
+            'parent_id': note.parent.id if note.parent_id else None
         })
 
     return render_template('vue_dashboard.html', user=user, notes=notes_data)
 
 # API Routes for Vue Frontend
+@csrf.exempt
 @app.route("/api/session")
 def api_session():
     username = session.get("user")
@@ -127,6 +140,7 @@ def api_session():
     })
 
 
+@csrf.exempt
 @app.route("/api/notes", methods=['GET'])
 def api_notes():
     if "user" not in session:
@@ -145,13 +159,16 @@ def api_notes():
                 "title": note.title,
                 "content": note.content,
                 "created_at": note.created_at.isoformat(),
-                "updated_at": note.updated_at.isoformat()
+                "updated_at": note.updated_at.isoformat(),
+                "version": note.version,
+                "parent_id": note.parent.id if note.parent_id else None
             }
             for note in notes
         ]
     })
 
 
+@csrf.exempt
 @app.route("/api/notes", methods=['POST'])
 def api_create_note():
     if "user" not in session:
@@ -179,6 +196,7 @@ def api_create_note():
     }), 201
 
 
+@csrf.exempt
 @app.route("/api/notes/<int:note_id>", methods=['GET'])
 def api_get_note(note_id):
     if "user" not in session:
@@ -198,11 +216,14 @@ def api_get_note(note_id):
             "title": note.title,
             "content": note.content,
             "created_at": note.created_at.isoformat(),
-            "updated_at": note.updated_at.isoformat()
+            "updated_at": note.updated_at.isoformat(),
+            "version": note.version,
+            "parent_id": note.parent.id if note.parent_id else None
         }
     })
 
 
+@csrf.exempt
 @app.route("/api/notes/<int:note_id>", methods=['PUT'])
 def api_update_note(note_id):
     if "user" not in session:
@@ -220,21 +241,49 @@ def api_update_note(note_id):
     title = data.get("title", note.title).strip()
     content = data.get("content", note.content).strip()
 
-    note.title = title
-    note.content = content
-    note.updated_at = datetime.now(timezone.utc)
-    note.save()
+    # Versioning: create a new version and mark current inactive
+    try:
+        next_version = (note.version or 1) + 1
+        note.is_active = False
+        note.save()
 
-    return jsonify({
-        "message": "Note updated successfully",
-        "note": {
-            "id": note.id,
-            "title": note.title,
-            "content": note.content,
-            "created_at": note.created_at.isoformat(),
-            "updated_at": note.updated_at.isoformat()
-        }
-    })
+        new_note = Note.create(
+            title=title,
+            content=content,
+            user=user,
+            parent=note,
+            version=next_version,
+            is_active=True,
+        )
+
+        # Retain only last 5 versions in chain (newest to oldest)
+        chain = []
+        cur = new_note
+        while cur.parent_id is not None:
+            chain.append(cur)
+            cur = cur.parent
+        if len(chain) > 5:
+            for old in chain[5:]:
+                try:
+                    old.delete_instance(recursive=False)
+                except Exception as _:
+                    logger.warning("Failed pruning old version id=%s", old.id)
+
+        return jsonify({
+            "message": "Note updated successfully",
+            "note": {
+                "id": new_note.id,
+                "title": new_note.title,
+                "content": new_note.content,
+                "created_at": new_note.created_at.isoformat(),
+                "updated_at": new_note.updated_at.isoformat(),
+                "version": new_note.version,
+                "parent_id": new_note.parent.id if new_note.parent_id else None
+            }
+        })
+    except Exception as e:
+        logger.error("Update/versioning failed: %s", e)
+        return jsonify({"message": "Update failed"}), 500
 
 
 @app.route('/edit_note/<int:note_id>')
@@ -256,10 +305,63 @@ def edit_note(note_id):
         'title': note.title,
         'content': note.content,
         'created_at': note.created_at.isoformat(),
-        'updated_at': note.updated_at.isoformat()
+        'updated_at': note.updated_at.isoformat(),
+        'version': note.version,
+        'parent_id': note.parent.id if note.parent_id else None
     })
 
 
+@csrf.exempt
+@app.route("/api/notes/<int:note_id>/revert", methods=['POST'])
+def api_revert_note(note_id):
+    if "user" not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    current = Note.get_or_none((Note.id == note_id) & (Note.user == user))
+    if not current:
+        return jsonify({"message": "Note not found"}), 404
+
+    if not current.parent_id:
+        return jsonify({"message": "No previous version to revert to"}), 400
+
+    parent = current.parent
+
+    try:
+        next_version = (current.version or 1) + 1
+        current.is_active = False
+        current.save()
+
+        reverted = Note.create(
+            title=parent.title,
+            content=parent.content,
+            user=user,
+            parent=current,
+            version=next_version,
+            is_active=True,
+        )
+
+        return jsonify({
+            "message": "Reverted to previous version",
+            "note": {
+                "id": reverted.id,
+                "title": reverted.title,
+                "content": reverted.content,
+                "created_at": reverted.created_at.isoformat(),
+                "updated_at": reverted.updated_at.isoformat(),
+                "version": reverted.version,
+                "parent_id": reverted.parent.id if reverted.parent_id else None
+            }
+        })
+    except Exception as e:
+        logger.error("Revert failed: %s", e)
+        return jsonify({"message": "Revert failed"}), 500
+
+
+@csrf.exempt
 @app.route("/api/notes/<int:note_id>", methods=['DELETE'])
 def api_delete_note(note_id):
     if "user" not in session:
@@ -278,6 +380,7 @@ def api_delete_note(note_id):
 
 
 # Keep your existing routes for backward compatibility
+@csrf.exempt
 @app.route("/save_note", methods=["POST"])
 def save_note():
     if "user" not in session:

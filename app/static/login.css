@@ -19,7 +19,7 @@ body {
     padding:  30px;
     width: 620px;
     max-width: 90vw;
-    background-image: url(../static/21.png) ;
+    background-image: url('21.png');
     background-size: contain;
     background-repeat: no-repeat;
     align-self: center;

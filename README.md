@@ -1,13 +1,20 @@
 # MiNotes
 
-MiNotes is a simple, full‑stack note‑taking application built with Flask (Python) and Peewee ORM, with a minimal Vue front‑end experience for the dashboard and editing. It supports user accounts and CRUD operations for notes.
+MiNotes is a simple, full‑stack note‑taking application built with Flask (Python) and Peewee ORM, with a minimal Vue front‑end experience for the dashboard and editing. It supports user accounts and CRUD operations for notes with versioning and auto‑save.
+
+## Purpose
+A lightweight personal notes app that:
+- Lets users sign up, log in, and manage notes securely.
+- Provides a pleasant, responsive UI (mobile‑friendly) with rich‑text editing.
+- Exposes a small REST API used by the dashboard and editor.
 
 ## Features
 - User signup, login, and logout (session‑based)
 - Create, read, update, and delete notes
 - Rich‑text editing (TipTap) for note content
-- Responsive pages for home, login, and signup
-- RESTful JSON API consumed by the dashboard
+- Note versioning with revert support
+- Responsive pages (home, login, signup, dashboard, editor)
+- RESTful JSON API consumed by the dashboard/editor
 
 ## Tech Stack
 - Backend: Flask, Peewee ORM (PostgreSQL)
@@ -21,45 +28,57 @@ MiNotes is a simple, full‑stack note‑taking application built with Flask (Py
 - app/static/ — CSS and image assets
 - requirements.txt — Python dependencies
 
-## Getting Started
+## Setup and Startup
 
 ### Prerequisites
 - Python 3.10+
-- PostgreSQL 12+
+- PostgreSQL 12+ (unless running in TESTING/SQLite mode)
 
 ### Environment Variables
-You can override these defaults to point to your own PostgreSQL instance:
+These default to local development values if not provided:
 - POSTGRES_DB (default: minotes)
 - POSTGRES_USER (default: minotes_user)
-- POSTGRES_PASSWORD (default provided in code — change in production!)
-- POSTGRES_HOST (default: dpg-d212lnmmcj7s73ec1j30-a)
+- POSTGRES_PASSWORD (no default; must be set for Postgres mode)
+- POSTGRES_HOST (default: localhost)
 - POSTGRES_PORT (default: 5432)
+- SECRET_KEY (default: dev-secret-change-me)
+- TESTING (set to 1 to use an in‑memory SQLite DB)
 
 Create a .env file or export them in your shell before running.
 
-### Setup
+### Install
 1. Create and activate a virtual environment.
 2. Install dependencies:
    pip install -r requirements.txt
-3. Ensure PostgreSQL is running and credentials are correct (see environment variables above).
-4. Initialize the database tables: the app creates tables automatically on import (database.py). On first run, it will print "Database connected and tables created".
+
+### Initialize Database
+- On import, database.py connects and creates tables if missing.
+- For quick local testing without Postgres, you can run with TESTING=1 which uses an in‑memory SQLite DB.
 
 ### Run (Development)
-FLASK_APP=app/main.py flask run
+- With Flask dev server:
+  FLASK_APP=app/main.py flask run
 
-Or run via Python + waitress (as configured in main.py):
-python app/main.py
+- With waitress (prod‑like):
+  python app/main.py
 
 The app will be available at http://127.0.0.1:5000.
+
+## Usage
+1. Open the app, click Sign Up to create an account.
+2. Log in with your credentials.
+3. Dashboard: create a new note, edit it, or delete it.
+4. Editor: write rich text; changes auto‑save and are versioned.
 
 ## API Overview
 All API endpoints require the user to be logged in (session cookie).
 
-- GET /api/session — returns the current session user info
+- GET /api/session — current session user info
 - GET /api/notes — list notes for the logged‑in user
 - POST /api/notes — create a note (JSON: { title, content })
-- GET /api/notes/<id> — get a single note
-- PUT /api/notes/<id> — update a note (JSON: { title, content })
+- GET /api/notes/<id> — fetch a single note
+- PUT /api/notes/<id> — update (creates a new active version)
+- POST /api/notes/<id>/revert — create a new version from the previous one
 - DELETE /api/notes/<id> — delete a note
 
 Legacy endpoint (for backward compatibility):
@@ -74,29 +93,30 @@ curl -X POST http://127.0.0.1:5000/api/notes \
 
 Note: Use -c/-b to include the session cookie after logging in via the form.
 
-## Usage
-1. Open the app, click Sign Up to create an account.
-2. Log in with your credentials.
-3. From the dashboard, create a new note, edit it, or delete it.
-4. Use the editor page for rich‑text editing; changes are auto‑saved.
-
 ## Responsiveness
-- Added viewport meta tags to pages.
-- Introduced media queries to adapt layout and typography for tablets and mobiles.
+- Viewport meta tags are included in all templates.
+- Media queries in CSS adapt layout and typography for tablets and mobiles.
+- Fixed asset paths to ensure images load correctly on all devices.
 
-## Database Models
-- User: username (unique), email, password
+## Database Models and Links
+- User: username (unique), email (unique), password_hash
 - Note: title, content, user (FK to User), created_at, updated_at, is_active, parent (self‑FK for versioning), version
 - UserSession: user (FK to User), session_id (unique), data
 
-Relations are enforced via Peewee ForeignKeyField. Tables are created on startup if missing.
+Relationships are enforced via ForeignKeyField. Tables are auto‑created at startup if missing. Note.save() updates updated_at to keep timestamps consistent.
+
+## Security
+- Passwords are hashed using Werkzeug’s PBKDF2 (generate_password_hash) and stored in the password_hash column. No plaintext passwords are stored.
+- CSRF protection is enabled for HTML forms via Flask‑WTF. The signup form includes a CSRF token. JSON API endpoints are CSRF‑exempt and require an authenticated session cookie.
+- Secrets and config: the database password is not hard‑coded; provide it via environment (.env). Set a strong SECRET_KEY in production.
 
 ## Production Notes
-- Update secret keys and DB credentials. Do not store plaintext passwords in production; use hashing (e.g., bcrypt).
-- Configure allowed CORS origins if you host a separate frontend.
-- Serve behind a proper WSGI server; waitress is included.
+- Set strong SECRET_KEY and secure DB credentials; never expose them.
+- Use a managed PostgreSQL instance and psycopg2-binary.
+- Consider stricter CORS configuration if hosting a separate frontend.
+- Serve behind a proper WSGI server (waitress included here) or your choice.
 
 ## Troubleshooting
-- If you get "Unauthorized" from API endpoints, ensure you are logged in (session cookie present).
-- If DB connection errors occur, verify your POSTGRES_* environment variables and network access.
-- For static assets not loading, ensure url_for('static', ...) is used in templates (updated in this repo).
+- “Unauthorized” from API: ensure you are logged in (session cookie present).
+- DB connection errors: verify POSTGRES_* env vars and network access.
+- Static assets not loading: ensure templates use url_for('static', ...); asset paths inside CSS should be relative to /static (fixed for login background).
