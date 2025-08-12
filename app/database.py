@@ -13,7 +13,7 @@ _eastern = timezone("US/Eastern")
 if os.environ.get("TESTING") == "1":
     db = SqliteDatabase(":memory:")
 else:
-    # Require password from environment; provide safe local defaults for others
+    # Require password from the environment; provide safe local defaults for others
     db = PostgresqlDatabase(
         os.environ.get("POSTGRES_DB", "minotes"),
         user=os.environ.get("POSTGRES_USER", "minotes_user"),
