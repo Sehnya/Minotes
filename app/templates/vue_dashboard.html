@@ -3,110 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes Dashboard</title>
+    <title>MiNotes • Dashboard</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://use.typekit.net/tmb0jpk.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
-    <div id="app">
-        <h1>Dashboard</h1>
-        <p>Welcome, {% raw %}{{ user ? user.username : 'Loading...' }}{% endraw %}</p>
-        <p>Notes: {% raw %}{{ notes.length }}{% endraw %}</p>
+<div id="app" class="app-shell" data-username="{{ user.username if user else '' }}" data-notes='{{ notes|tojson }}'>
+    <header class="header">
+        <div class="brand">
+            <div class="brand-logo" aria-hidden="true"></div>
+            <div class="brand-title">MiNotes</div>
+        </div>
+        <div class="actions">
+            <div class="welcome">Welcome, {% raw %}{{ username || 'Loading...' }}{% endraw %}</div>
+            <button class="btn btn-secondary" @click="logout">Logout</button>
+        </div>
+    </header>
 
-        <div v-if="loading">Loading...</div>
-        <div v-else>
-            <button @click="createNote" class="btn">+ New Note</button>
-
-            <div v-for="note in notes" :key="note.id" style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
-                <h3>{% raw %}{{ note.title }}{% endraw %}</h3>
-                <p>{% raw %}{{ note.content.substring(0, 100) }}{% endraw %}...</p>
-                <small>{% raw %}{{ formatDate(note.updated_at) }}{% endraw %}</small>
-                <button @click="deleteNote(note.id)" style="color: red;">Delete</button>
-            </div>
+    <main class="main">
+        <div class="toolbar">
+            <div class="welcome">You have {% raw %}{{ notes.length }}{% endraw %} note{% raw %}{{ notes.length === 1 ? '' : 's' }}{% endraw %}.</div>
+            <button class="btn new-note btn-success" @click="createNote">+ New Note</button>
         </div>
 
-        <button @click="logout" style="background: red; color: white;">Logout</button>
-    </div>
+        <div v-if="loading" class="loading">Loading your adorable notes...</div>
 
-    <script>
-        const { createApp } = Vue;
+        <div v-else>
+            <div v-if="notes.length === 0" class="empty-state">
+                <h2 style="margin:6px 0 10px">So tidy! No notes yet.</h2>
+                <p style="margin:0 0 14px;color:#6b5e57">Click the peachy button to start your first note.</p>
+                <button class="btn btn-success" @click="createNote">+ Create Note</button>
+            </div>
 
-        createApp({
-            data() {
-                return {
-                    user: {{ user.username|tojson if user else 'null' }},
-                    notes: {{ notes|tojson }},
-                    loading: false
-                }
-            },
+            <div v-else class="grid">
+                <div class="note-card" v-for="note in notes" :key="note.id">
+                    <div class="note-title">{% raw %}{{ note.title || 'Untitled' }}{% endraw %}</div>
+                    <div class="note-preview">{% raw %}{{ stripHtml(note.content).substring(0, 120) }}{% endraw %}...</div>
+                    <div class="note-meta">
+                        <span>{% raw %}{{ formatDate(note.updated_at) }}{% endraw %}</span>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" @click="editNote(note.id)">Edit</button>
+                            <button class="btn btn-danger" @click="deleteNote(note.id)">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-            methods: {
-                async createNote() {
-                    try {
-                        const response = await fetch('/api/notes', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
-                            body: JSON.stringify({
-                                title: 'New Note',
-                                content: '<p>Start writing...</p>'
-                            })
-                        });
+    <button class="fab" @click="createNote">+ New Note</button>
+</div>
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.notes.unshift(data.note);
-                            alert('Note created!');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        alert('Failed to create note');
-                    }
-                },
+<script>
+const { createApp } = Vue;
 
-                async deleteNote(noteId) {
-                    if (!confirm('Delete this note?')) return;
-
-                    try {
-                        const response = await fetch(`/api/notes/${noteId}`, {
-                            method: 'DELETE',
-                            credentials: 'include'
-                        });
-
-                        if (response.ok) {
-                            this.notes = this.notes.filter(n => n.id !== noteId);
-                            alert('Note deleted!');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        alert('Failed to delete note');
-                    }
-                },
-
-                formatDate(dateString) {
-                    return new Date(dateString).toLocaleDateString();
-                },
-
-                async logout() {
-                    window.location.href = '/logout';
-                }
-            }
-        }).mount('#app');
-    </script>
-
-    <style>
-        .btn {
-            background: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px 0;
+createApp({
+  data() {
+    const root = document.getElementById('app');
+    return {
+      username: (root && root.dataset && root.dataset.username) ? root.dataset.username : null,
+      notes: (() => { try { return root && root.dataset && root.dataset.notes ? JSON.parse(root.dataset.notes) : []; } catch(e){ return []; } })(),
+      loading: false
+    }
+  },
+  methods: {
+    stripHtml(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html || '';
+      return tmp.textContent || tmp.innerText || '';
+    },
+    async createNote() {
+      try {
+        const response = await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: 'New Note',
+            content: '<p>Start writing...</p>'
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          this.notes.unshift(data.note);
+          // Optionally navigate to edit
+          this.editNote(data.note.id);
         }
-
-        .btn:hover {
-            background: #0056b3;
+      } catch (e) {
+        console.error(e);
+        alert('Failed to create note');
+      }
+    },
+    editNote(id) {
+      window.location.href = `/edit_note/${id}`;
+    },
+    async deleteNote(noteId) {
+      if (!confirm('Delete this note?')) return;
+      try {
+        const response = await fetch(`/api/notes/${noteId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (response.ok) {
+          this.notes = this.notes.filter(n => n.id !== noteId);
         }
-    </style>
+      } catch (e) {
+        console.error(e);
+        alert('Failed to delete note');
+      }
+    },
+    formatDate(dateString) {
+      try {
+        const d = new Date(dateString);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch {
+        return '';
+      }
+    },
+    logout() {
+      window.location.href = '/logout';
+    }
+  }
+}).mount('#app');
+</script>
 </body>
 </html>
