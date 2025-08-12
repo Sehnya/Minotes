@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = "Elija11052017!"
 app.permanent_session_lifetime = timedelta(days=7)
 
-CORS(app, supports_credentials=True, origins='*')
+CORS(app, supports_credentials=True)
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        user = User.get_or_none(User.username == username, User.password == password)
+        user = User.get_or_none((User.username == username) & (User.password == password))
 
         if user and user.password == password:
             session["user"] = username
@@ -88,10 +88,25 @@ def logout():
 def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
-    user = User.get_or_none(User.username == session["user"])
-    notes = Note.select().where(Note.user == user)
-    return render_template('vue_dashboard.html', user=user, notes=notes)
 
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return redirect(url_for("login"))
+
+    # Convert Peewee query to list of dictionaries
+    notes_query = Note.select().where((Note.user == user) & (Note.is_active == True)).order_by(Note.updated_at.desc())
+    notes_data = []
+
+    for note in notes_query:
+        notes_data.append({
+            'id': note.id,
+            'title': note.title,
+            'content': note.content,
+            'created_at': note.created_at.isoformat(),
+            'updated_at': note.updated_at.isoformat()
+        })
+
+    return render_template('vue_dashboard.html', user=user, notes=notes_data)
 
 # API Routes for Vue Frontend
 @app.route("/api/session")
@@ -219,6 +234,29 @@ def api_update_note(note_id):
             "created_at": note.created_at.isoformat(),
             "updated_at": note.updated_at.isoformat()
         }
+    })
+
+
+@app.route('/edit_note/<int:note_id>')
+def edit_note(note_id):
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    user = User.get_or_none(User.username == session["user"])
+    if not user:
+        return redirect(url_for("login"))
+
+    note = Note.get_or_none((Note.id == note_id) & (Note.user == user) & (Note.is_active == True))
+    if not note:
+        flash("Note not found")
+        return redirect(url_for("dashboard"))
+
+    return render_template('edit_note.html', user=user, note={
+        'id': note.id,
+        'title': note.title,
+        'content': note.content,
+        'created_at': note.created_at.isoformat(),
+        'updated_at': note.updated_at.isoformat()
     })
 
 

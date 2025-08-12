@@ -1,7 +1,7 @@
 
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from time import tzname
 from pytz import timezone
 
@@ -33,8 +33,7 @@ class User(BaseModel):
     class Meta:
         table_name = 'users'
 
-from peewee import *
-from datetime import datetime
+# from peewee import *  # duplicate import removed
 
 class Note(BaseModel):
     title = CharField()

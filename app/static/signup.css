@@ -20,12 +20,31 @@ body {
     background-repeat:no-repeat;
     background-size: contain;
     height: 500px;
+    max-width: 90vw;
     filter: drop-shadow(0px 0px 1px rgb(63, 47, 47));
     justify-self: center;
     align-self:  center;
     position: relative;
     top: 25%;
     margin: 0;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+    .card {
+        padding: 1.5rem;
+        height: auto;
+        top: 10%;
+    }
+    .card-body {
+        font-size: 16px;
+    }
+    .submit-cancel {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
 
 .card-body {

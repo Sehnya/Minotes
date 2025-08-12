@@ -15,11 +15,12 @@ body {
 }
 
 #container {
-    height: 600px;
+    min-height: 400px;
     padding:  30px;
-width: 620px;
-background-image: url(../static/21.png) ;
-    background-size: inherit;
+    width: 620px;
+    max-width: 90vw;
+    background-image: url(../static/21.png) ;
+    background-size: contain;
     background-repeat: no-repeat;
     align-self: center;
     justify-self: center;
@@ -29,7 +30,19 @@ background-image: url(../static/21.png) ;
     display: inline-flex;
     flex-direction: column;
     text-align: center;
+}
 
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+  #container {
+    width: 100%;
+    background-size: cover;
+  }
+  button {
+    left: 0;
+  }
 }
 
 form {
