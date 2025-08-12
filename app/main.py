@@ -7,8 +7,22 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect
 
-from app.database import User, Note, db
-from app.forms import MyForm
+# Support both package and script execution contexts for imports
+try:
+    from .database import User, Note, db  # type: ignore
+except Exception:  # pragma: no cover - fallback for non-package execution
+    try:
+        from app.database import User, Note, db  # type: ignore
+    except Exception:  # Last-resort fallback
+        from database import User, Note, db  # type: ignore
+
+try:
+    from .forms import MyForm  # type: ignore
+except Exception:  # pragma: no cover - fallback for non-package execution
+    try:
+        from app.forms import MyForm  # type: ignore
+    except Exception:  # Last-resort fallback
+        from forms import MyForm  # type: ignore
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
