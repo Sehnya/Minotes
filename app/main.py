@@ -22,6 +22,14 @@ CORS(app, supports_credentials=True)
 logger = logging.getLogger(__name__)
 
 
+def _iso(value):
+    """Return ISO 8601 string for datetime-like values, passthrough otherwise."""
+    try:
+        return value.isoformat()
+    except Exception:
+        return str(value)
+
+
 @app.before_request
 def _db_connect():
     if db.is_closed():
@@ -112,8 +120,8 @@ def dashboard():
             'id': note.id,
             'title': note.title,
             'content': note.content,
-            'created_at': note.created_at.isoformat(),
-            'updated_at': note.updated_at.isoformat(),
+            'created_at': _iso(note.created_at),
+            'updated_at': _iso(note.updated_at),
             'version': note.version,
             'parent_id': note.parent.id if note.parent_id else None
         })
@@ -158,8 +166,8 @@ def api_notes():
                 "id": note.id,
                 "title": note.title,
                 "content": note.content,
-                "created_at": note.created_at.isoformat(),
-                "updated_at": note.updated_at.isoformat(),
+                "created_at": _iso(note.created_at),
+                "updated_at": _iso(note.updated_at),
                 "version": note.version,
                 "parent_id": note.parent.id if note.parent_id else None
             }
@@ -190,8 +198,8 @@ def api_create_note():
             "id": new_note.id,
             "title": new_note.title,
             "content": new_note.content,
-            "created_at": new_note.created_at.isoformat(),
-            "updated_at": new_note.updated_at.isoformat()
+            "created_at": _iso(new_note.created_at),
+            "updated_at": _iso(new_note.updated_at)
         }
     }), 201
 
@@ -215,8 +223,8 @@ def api_get_note(note_id):
             "id": note.id,
             "title": note.title,
             "content": note.content,
-            "created_at": note.created_at.isoformat(),
-            "updated_at": note.updated_at.isoformat(),
+            "created_at": _iso(note.created_at),
+            "updated_at": _iso(note.updated_at),
             "version": note.version,
             "parent_id": note.parent.id if note.parent_id else None
         }
@@ -275,8 +283,8 @@ def api_update_note(note_id):
                 "id": new_note.id,
                 "title": new_note.title,
                 "content": new_note.content,
-                "created_at": new_note.created_at.isoformat(),
-                "updated_at": new_note.updated_at.isoformat(),
+                "created_at": _iso(new_note.created_at),
+                "updated_at": _iso(new_note.updated_at),
                 "version": new_note.version,
                 "parent_id": new_note.parent.id if new_note.parent_id else None
             }
